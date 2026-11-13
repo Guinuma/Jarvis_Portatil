@@ -1,7 +1,9 @@
 """Run H.O.L.O Hands with local Ollama summaries and questions."""
+import argparse
 import json
 import os
 import sys
+import webbrowser
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -21,7 +23,7 @@ def load_page():
     return (page[:start] + integration + "\n" + page[end:]).encode("utf-8")
 
 
-def run():
+def run(open_browser=False):
     if not (HOLO / "server.py").is_file():
         raise SystemExit("Executa git submodule update --init antes de arrancar.")
     sys.path.insert(0, str(HOLO))
@@ -102,12 +104,24 @@ def run():
             return self._send(200, {result_key: result})
 
     with ThreadingHTTPServer(("127.0.0.1", holo.PORT), Handler) as server:
-        print(f"Jarvis Portátil em http://localhost:{holo.PORT} ({MODEL})", flush=True)
+        address = f"http://localhost:{server.server_port}"
+        print(f"Jarvis Portátil em {address} ({MODEL})", flush=True)
+        if open_browser:
+            webbrowser.open(address)
         server.serve_forever()
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Arranca o Jarvis Portátil.")
+    parser.add_argument("--open", action="store_true", help="Abre o painel no navegador.")
+    args = parser.parse_args()
     try:
-        run()
+        run(open_browser=args.open)
     except KeyboardInterrupt:
         pass
+    except OSError as error:
+        if error.errno in (48, 98, 10048) or getattr(error, "winerror", None) in (10013, 10048):
+            raise SystemExit(
+                "A porta está ocupada ou indisponível. Fecha a outra janela do Jarvis ou define HOLO_PORT."
+            ) from None
+        raise

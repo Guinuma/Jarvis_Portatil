@@ -13,15 +13,16 @@ Agarra um cartão de exemplo no H.O.L.O Hands e comprime-o com as duas mãos par
 
 ## Testar o protótipo no Windows
 
-Na pasta do projeto, com o Ollama aberto e o modelo instalado, executa:
+Com o Python instalado e o Ollama aberto, faz duplo clique em **Iniciar Jarvis.cmd**. O painel abre no navegador predefinido. Mantém a janela do Jarvis aberta enquanto usas o painel e prime **Ctrl+C** nessa janela para terminar.
+
+Se for a primeira vez numa cópia do repositório, prepara o H.O.L.O e o modelo com estes comandos na pasta do projeto:
 
 ```powershell
 git submodule update --init
 ollama pull qwen3:8b
-python jarvis_holo.py
 ```
 
-Abre http://localhost:4890 no navegador. Abre uma pasta e uma nota com o rato e carrega em **Resumir com Qwen**. Com a webcam, agarra um cartão e comprime-o com as duas mãos para pedir o mesmo resumo.
+Para arrancar pelo terminal, usa `python jarvis_holo.py` e abre [o painel local](http://localhost:4890). Abre uma pasta e uma nota com o rato e carrega em **Resumir com Qwen**. Com a webcam, agarra um cartão e comprime-o com as duas mãos para pedir o mesmo resumo.
 
 O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, define `$env:JARVIS_MODEL` antes de arrancar. Quando o resumo aparecer no painel, carrega em **Ouvir resumo**. A reprodução usa uma voz local em português do navegador, com preferência por português de Portugal. Se o botão indicar que falta uma voz, adiciona uma voz portuguesa nas definições de Voz do Windows e volta a abrir o navegador. A ligação ao Jarvis de desktop faz parte da etapa seguinte.
 
