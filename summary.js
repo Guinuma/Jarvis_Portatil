@@ -159,3 +159,107 @@ questionForm.addEventListener('submit', async event => {
     }
   }
 });
+const dictationButton = document.createElement('button');
+dictationButton.type = 'button';
+dictationButton.textContent = 'Ditar pergunta';
+askButton.after(dictationButton);
+
+const dictationStatus = document.createElement('p');
+dictationStatus.setAttribute('role', 'status');
+dictationButton.after(dictationStatus);
+
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let dictation;
+const closeNote = closeReader;
+closeReader = function () {
+  const session = dictation;
+  dictation = undefined;
+  session?.recognition?.abort();
+  dictationButton.disabled = false;
+  dictationButton.textContent = 'Ditar pergunta';
+  dictationStatus.textContent = '';
+  closeNote();
+};
+readerEl.removeEventListener('pointerdown', closeNote);
+readerEl.addEventListener('pointerdown', closeReader);
+
+dictationButton.addEventListener('click', async () => {
+  if (dictation?.recognition) {
+    dictation.recognition.stop();
+    dictationButton.disabled = true;
+    return;
+  }
+  if (typeof Recognition?.available !== 'function' ||
+      !('processLocally' in Recognition.prototype)) {
+    dictationStatus.textContent = 'Este navegador não tem ditado local. Experimenta no Chrome.';
+    return;
+  }
+
+  const session = {};
+  dictation = session;
+  dictationButton.disabled = true;
+  dictationStatus.textContent = 'A verificar o ditado local…';
+  const finish = () => {
+    if (dictation !== session) return;
+    dictation = undefined;
+    dictationButton.disabled = false;
+    dictationButton.textContent = 'Ditar pergunta';
+  };
+
+  try {
+    let language;
+    for (const lang of ['pt-PT', 'pt-BR']) {
+      const options = { langs: [lang], processLocally: true };
+      const availability = await Recognition.available(options);
+      if (dictation !== session) return;
+      if (availability === 'available' ||
+          (['downloadable', 'downloading'].includes(availability) &&
+           await Recognition.install(options))) {
+        language = lang;
+        break;
+      }
+      if (dictation !== session) return;
+    }
+    if (dictation !== session) return;
+    if (!language) {
+      dictationStatus.textContent = 'O ditado local em português está indisponível neste navegador.';
+      finish();
+      return;
+    }
+
+    const recognition = new Recognition();
+    session.recognition = recognition;
+    recognition.lang = language;
+    recognition.processLocally = true;
+    recognition.onstart = () => {
+      if (dictation !== session) return;
+      dictationButton.disabled = false;
+      dictationButton.textContent = 'Parar ditado';
+      dictationStatus.textContent = 'A ouvir…';
+    };
+    recognition.onresult = event => {
+      if (dictation !== session) return;
+      questionInput.value = event.results[0][0].transcript.trim().slice(0, 500);
+      dictationStatus.textContent = 'Revê a transcrição antes de perguntar.';
+    };
+    recognition.onerror = event => {
+      if (dictation !== session) return;
+      dictationStatus.textContent = event.error === 'not-allowed'
+        ? 'Permite o acesso ao microfone para ditar.'
+        : 'Não foi possível transcrever. Podes tentar novamente ou escrever a pergunta.';
+      finish();
+    };
+    recognition.onend = () => {
+      if (dictation === session && dictationStatus.textContent === 'A ouvir…') {
+        dictationStatus.textContent = 'Nenhuma pergunta foi reconhecida.';
+      }
+      finish();
+    };
+    recognition.start();
+  } catch {
+    if (dictation === session) {
+      dictationStatus.textContent = 'Não foi possível iniciar o ditado local.';
+      finish();
+    }
+  }
+});

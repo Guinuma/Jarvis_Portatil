@@ -27,6 +27,8 @@ O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, 
 
 Para perguntar sobre um cartão, abre a nota, escreve no campo **Pergunta sobre esta nota** e carrega em **Perguntar**. O Qwen usa o conteúdo desse cartão para responder no leitor. Carrega em **Ouvir resposta** para ler o resultado com a mesma voz local usada nos resumos.
 
+Para usar o microfone, carrega em **Ditar pergunta**, permite o acesso ao microfone e revê a transcrição antes de enviar. É preciso um navegador com reconhecimento no dispositivo e um pacote de português compatível. O primeiro uso pode descarregar esse pacote. Se o ditado local estiver indisponível, escreve a pergunta.
+
 ## Roadmap
 
 | Etapa | Resultado esperado |
@@ -62,7 +64,8 @@ Para perguntar sobre um cartão, abre a nota, escreve no campo **Pergunta sobre 
 - [x] Adicionar a reprodução pelo navegador e testar a seleção de voz local e a mensagem quando falta uma voz.
 - [ ] Ouvir um resumo no portátil com uma voz portuguesa instalada.
 - [x] Usar a nota aberta como contexto de uma pergunta escrita e confirmar a resposta no Edge.
-- [ ] Passar a nota selecionada como contexto para uma pergunta por voz, como “Qual é o prazo desta nota?”.
+- [x] Adicionar ditado local ao campo de pergunta e testar transcrição e cancelamento com reconhecimento simulado.
+- [ ] Confirmar ditado em português com o microfone físico e um pacote local instalado.
 - [ ] Validar a sequência completa com uma nota de exemplo, incluindo a troca de cartão entre pedidos.
 
 ### 4. Preparar a instalação
