@@ -25,6 +25,8 @@ Abre http://localhost:4890 no navegador. Abre uma pasta e uma nota com o rato e 
 
 O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, define `$env:JARVIS_MODEL` antes de arrancar. Quando o resumo aparecer no painel, carrega em **Ouvir resumo**. A reprodução usa uma voz local em português do navegador, com preferência por português de Portugal. Se o botão indicar que falta uma voz, adiciona uma voz portuguesa nas definições de Voz do Windows e volta a abrir o navegador. A ligação ao Jarvis de desktop faz parte da etapa seguinte.
 
+Para perguntar sobre um cartão, abre a nota, escreve no campo **Pergunta sobre esta nota** e carrega em **Perguntar**. O Qwen usa o conteúdo desse cartão para responder no leitor.
+
 ## Roadmap
 
 | Etapa | Resultado esperado |
@@ -59,6 +61,7 @@ O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, 
 
 - [x] Adicionar a reprodução pelo navegador e testar a seleção de voz local e a mensagem quando falta uma voz.
 - [ ] Ouvir um resumo no portátil com uma voz portuguesa instalada.
+- [x] Usar a nota aberta como contexto de uma pergunta escrita e confirmar a resposta no Edge.
 - [ ] Passar a nota selecionada como contexto para uma pergunta por voz, como “Qual é o prazo desta nota?”.
 - [ ] Validar a sequência completa com uma nota de exemplo, incluindo a troca de cartão entre pedidos.
 

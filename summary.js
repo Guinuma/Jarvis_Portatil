@@ -88,3 +88,70 @@ function addSummaryAudio(panel, summary) {
     window.speechSynthesis.speak(speech);
   });
 }
+
+const questionForm = document.createElement('form');
+questionForm.style.marginTop = '16px';
+const questionLabel = document.createElement('label');
+questionLabel.htmlFor = 'note-question';
+questionLabel.textContent = 'Pergunta sobre esta nota';
+const questionInput = document.createElement('input');
+questionInput.id = questionLabel.htmlFor;
+questionInput.required = true;
+questionInput.maxLength = 500;
+questionInput.style.cssText = 'display:block;width:100%;margin:6px 0;padding:8px';
+const askButton = document.createElement('button');
+askButton.type = 'submit';
+askButton.textContent = 'Perguntar';
+const answerBox = document.createElement('p');
+answerBox.setAttribute('role', 'status');
+answerBox.style.cssText = 'margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere';
+questionForm.append(questionLabel, questionInput, askButton, answerBox);
+paneEl.querySelector('.hint').before(questionForm);
+questionForm.addEventListener('pointerdown', event => event.stopPropagation());
+questionForm.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') event.stopPropagation();
+});
+
+let questionRequest;
+const openNote = openReader;
+openReader = function (card) {
+  questionRequest?.abort();
+  questionRequest = undefined;
+  questionForm.reset();
+  askButton.disabled = false;
+  answerBox.textContent = '';
+  openNote(card);
+};
+
+questionForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const question = questionInput.value.trim();
+  const card = reader.card;
+  if (!question || !card || questionRequest) return;
+
+  const request = new AbortController();
+  questionRequest = request;
+  askButton.disabled = true;
+  answerBox.textContent = 'A consultar a nota…';
+  try {
+    const response = await fetch('/api/question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: (card.full || card.body || card.title).slice(0, 4000), question }),
+      signal: request.signal
+    });
+    const result = await response.json();
+    if (questionRequest === request) {
+      answerBox.textContent = response.ok ? result.answer : result.error;
+    }
+  } catch {
+    if (questionRequest === request) {
+      answerBox.textContent = 'Não foi possível contactar o servidor local.';
+    }
+  } finally {
+    if (questionRequest === request) {
+      questionRequest = undefined;
+      askButton.disabled = false;
+    }
+  }
+});
