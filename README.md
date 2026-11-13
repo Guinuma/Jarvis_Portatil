@@ -9,7 +9,21 @@ Assistente de voz local no Windows com uma interface controlada por gestos da we
 
 ## Primeiro protótipo
 
-Abre uma nota de exemplo no H.O.L.O Hands e comprime o cartão com as duas mãos. A integração deve enviar o texto ao modelo local e mostrar e ler um resumo curto em português. A pinça rápida abre a nota. O gesto de comprimir já pede um resumo no H.O.L.O e será reutilizado.
+Agarra um cartão de exemplo no H.O.L.O Hands e comprime-o com as duas mãos para pedir um resumo curto em português. O resumo aparece no painel. A pinça rápida abre a nota. O gesto de comprimir já pede um resumo no H.O.L.O e será reutilizado.
+
+## Testar o protótipo no Windows
+
+Na pasta do projeto, com o Ollama aberto e o modelo instalado, executa:
+
+```powershell
+git submodule update --init
+ollama pull qwen3:8b
+python jarvis_holo.py
+```
+
+Abre http://localhost:4890 no navegador. Abre uma pasta e uma nota com o rato e carrega em **Resumir com Qwen**. Com a webcam, agarra um cartão e comprime-o com as duas mãos para pedir o mesmo resumo.
+
+O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, define `$env:JARVIS_MODEL` antes de arrancar. Nesta versão, o resumo aparece no painel. A leitura em voz alta e a ligação ao Jarvis de desktop fazem parte da etapa seguinte.
 
 ## Roadmap
 
@@ -33,11 +47,12 @@ Abre uma nota de exemplo no H.O.L.O Hands e comprime o cartão com as duas mãos
 
 ### 2. Ligar o gesto ao modelo
 
-- [ ] Fixar a revisão do H.O.L.O usada no protótipo e preservar a licença e os créditos.
-- [ ] Reutilizar a ação de resumo do H.O.L.O para enviar a nota selecionada a uma rota local.
-- [ ] Gerar um resumo curto em português no Ollama e mostrá-lo no painel.
-- [ ] Mostrar o estado de processamento e tratar pedidos repetidos, Ollama indisponível e modelo em falta.
-- [ ] Confirmar que o pedido funciona com o gesto e que há uma ação equivalente com o rato.
+- [x] Fixar a revisão do H.O.L.O usada no protótipo e preservar a licença e os créditos.
+- [x] Reutilizar a ação de resumo do H.O.L.O para enviar a nota selecionada a uma rota local.
+- [x] Implementar o resumo no Ollama e a apresentação do resultado no painel.
+- [x] Mostrar o estado de processamento e tratar pedidos repetidos, Ollama indisponível e modelo em falta.
+- [x] Confirmar que a rota local resume uma nota de exemplo e trata uma nota vazia e um modelo em falta.
+- [ ] Confirmar no navegador que o gesto e o botão funcionam de ponta a ponta.
 
 ### 3. Integrar a voz
 
@@ -49,4 +64,4 @@ Abre uma nota de exemplo no H.O.L.O Hands e comprime o cartão com as duas mãos
 
 - [ ] Documentar a configuração e o arranque no Windows, incluindo a instalação inicial dos modelos.
 - [ ] Repetir o teste com a Internet desligada depois de descarregar as dependências.
-- [ ] Registar os passos para resolver problemas de câmera, microfone ou Ollama.
+- [ ] Registar os passos para resolver problemas de câmara, microfone ou Ollama.
