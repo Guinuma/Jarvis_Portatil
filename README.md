@@ -23,7 +23,7 @@ python jarvis_holo.py
 
 Abre http://localhost:4890 no navegador. Abre uma pasta e uma nota com o rato e carrega em **Resumir com Qwen**. Com a webcam, agarra um cartão e comprime-o com as duas mãos para pedir o mesmo resumo.
 
-O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, define `$env:JARVIS_MODEL` antes de arrancar. Nesta versão, o resumo aparece no painel. A leitura em voz alta e a ligação ao Jarvis de desktop fazem parte da etapa seguinte.
+O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, define `$env:JARVIS_MODEL` antes de arrancar. Quando o resumo aparecer no painel, carrega em **Ouvir resumo**. A reprodução usa uma voz local em português do navegador, com preferência por português de Portugal. Se o botão indicar que falta uma voz, adiciona uma voz portuguesa nas definições de Voz do Windows e volta a abrir o navegador. A ligação ao Jarvis de desktop faz parte da etapa seguinte.
 
 ## Roadmap
 
@@ -41,7 +41,8 @@ O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, 
 - [x] Verificar que Python e Ollama estão disponíveis no portátil.
 - [x] Iniciar o servidor original do H.O.L.O e confirmar que a API devolve as duas notas de exemplo. Revisão testada: `55626ff`.
 - [x] Pedir um resumo em português ao modelo local `qwen3:8b` pelo Ollama.
-- [ ] Abrir o H.O.L.O no navegador, correr o teste integrado em `?probe=1` e testar com webcam e rato.
+- [x] Correr o teste integrado em `?probe=1` no Edge (26/26) e abrir uma nota com o rato.
+- [ ] Testar os gestos com a webcam física.
 - [ ] Executar o Jarvis no Windows e confirmar entrada de microfone e saída de áudio em português.
 - [ ] Inspecionar o fluxo de chat e voz do Jarvis para identificar por onde enviar contexto de um cartão e ler a resposta.
 
@@ -52,11 +53,12 @@ O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, 
 - [x] Implementar o resumo no Ollama e a apresentação do resultado no painel.
 - [x] Mostrar o estado de processamento e tratar pedidos repetidos, Ollama indisponível e modelo em falta.
 - [x] Confirmar que a rota local resume uma nota de exemplo e trata uma nota vazia e um modelo em falta.
-- [ ] Confirmar no navegador que o gesto e o botão funcionam de ponta a ponta.
+- [x] Confirmar no Edge que o botão gera e mostra um resumo de uma nota de exemplo.
 
 ### 3. Integrar a voz
 
-- [ ] Ligar a resposta à voz local e verificar a reprodução de um resumo em português.
+- [x] Adicionar a reprodução pelo navegador e testar a seleção de voz local e a mensagem quando falta uma voz.
+- [ ] Ouvir um resumo no portátil com uma voz portuguesa instalada.
 - [ ] Passar a nota selecionada como contexto para uma pergunta por voz, como “Qual é o prazo desta nota?”.
 - [ ] Validar a sequência completa com uma nota de exemplo, incluindo a troca de cartão entre pedidos.
 
