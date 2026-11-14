@@ -36,6 +36,8 @@ Pede «Abre o projeto Física no VS Code». Se houver vários resultados, o chat
 
 Para procurar as notas da última sessão, guarda os ficheiros `.md` ou `.txt` em `notes/AAAA-MM-DD/` dentro do projeto. Pede «Encontra as notas da última sessão» para este repositório ou «Encontra as notas da última sessão do projeto Física» para um projeto autorizado. O resultado inclui os caminhos e a data mais recente com notas, retirada do nome da pasta.
 
+Para agendar um aviso, escreve «Lembra-me daqui a 45 minutos de fazer uma pausa». Mantém o separador do JARVIS aberto até à hora do lembrete. Também podes pedir «Jarvis, abre o meu projeto, encontra as notas da última sessão e lembra-me daqui a 45 minutos de fazer uma pausa» num único pedido.
+
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
 
 ## Verificar a base local

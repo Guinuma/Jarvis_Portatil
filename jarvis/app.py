@@ -12,9 +12,10 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .integrations.editor import open_project, project_request, resolve_project
+from .integrations.editor import normalize, open_project, project_request, resolve_project
 
 from .integrations.notes import latest_notes, notes_request
+from .integrations.reminders import COMBINED, parse_reminder
 
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
@@ -104,7 +105,37 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError
         except (KeyError, TypeError, ValueError):
             return self.send_content(400, {"error": "O pedido de conversa está vazio ou é demasiado grande."})
-        project = project_request(messages[-1]["content"])
+        text = messages[-1]["content"].strip()
+        combined = COMBINED.match(normalize(text))
+        try:
+            reminder = parse_reminder(text[combined.end():] if combined else text)
+        except ValueError as error:
+            return self.send_content(400, {"error": str(error)})
+        if reminder:
+            label, seconds = reminder
+            results = []
+            if combined:
+                try:
+                    open_project(ROOT)
+                    results.append("Pedi ao VS Code para abrir o JARVIS Portátil.")
+                except OSError as error:
+                    results.append(f"Não consegui abrir o projeto: {error}")
+                try:
+                    session, paths = latest_notes(ROOT)
+                    if session:
+                        results.append(f"Notas da sessão de {session:%d/%m/%Y} (data da pasta):")
+                        results.extend(str(ROOT / path) for path in paths)
+                    else:
+                        results.append("Não encontrei notas de sessão no projeto.")
+                except (OSError, ValueError, RuntimeError):
+                    results.append("Não consegui consultar a pasta de notas.")
+            due = time.time() + seconds
+            results.append(f"Lembrete às {time.strftime('%H:%M:%S', time.localtime(due))}: {label}")
+            return self.send_content(200, {
+                "reply": "\n".join(results), "reminder": {"label": label, "due": due},
+            })
+
+        project = project_request(text)
         notes = notes_request(messages[-1]["content"])
         if project is not None or notes is not None:
             try:

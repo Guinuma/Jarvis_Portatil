@@ -116,7 +116,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Consultar a agenda ligada e devolver os compromissos do dia solicitado.
 - [ ] Consultar a disponibilidade num intervalo e apresentar os períodos livres.
 - [ ] Criar um temporizador e confirmar que o aviso dispara ao fim do intervalo indicado.
-- [ ] Criar um lembrete para uma hora absoluta ou relativa, mostrar a hora calculada e emitir a notificação nessa altura.
+- [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta. Validado no Chromium com um intervalo de teste.
+- [ ] Criar um lembrete para uma hora absoluta.
 - [ ] Editar um lembrete e confirmar que dispara apenas na nova hora.
 - [ ] Cancelar um lembrete e confirmar que a notificação deixa de estar agendada.
 
@@ -142,6 +143,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 > «Jarvis, abre o meu projeto, encontra as notas da última sessão e lembra-me daqui a 45 minutos de fazer uma pausa.»
 
+- [x] Validar por texto o pedido combinado, incluindo os caminhos das notas e o cálculo dos 45 minutos. A abertura do VS Code foi simulada neste teste.
 - [ ] Dizer o pedido em voz alta e confirmar que a transcrição mantém as três ações e o intervalo de 45 minutos.
 - [ ] Confirmar que abre o projeto correto.
 - [ ] Confirmar que encontra as notas certas e indica os ficheiros ou as ligações onde as encontrou.

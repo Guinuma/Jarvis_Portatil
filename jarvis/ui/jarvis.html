@@ -52,6 +52,7 @@ form{display:flex;gap:8px}#prompt{width:100%;min-width:0;color:var(--text);backg
       </select></label>
       <span id="voice-status" role="status"></span>
     </div>
+    <div id="reminders" role="log" aria-label="Avisos de lembretes"></div>
     <p id="notice" role="alert"></p>
   </section>
   <aside class="panel" aria-labelledby="activity-heading">
@@ -336,7 +337,17 @@ form.addEventListener('submit', async event => {
     });
     if (!response.ok) throw new Error((await response.json()).error);
     const local = response.headers.get('Content-Type')?.startsWith('application/json');
-    const reply = local ? (await response.json()).reply : await readReply(response, answer, speech);
+    const result = local ? await response.json() : null;
+    const reply = local ? result.reply : await readReply(response, answer, speech);
+    if (result?.reminder) {
+      const {label, due} = result.reminder;
+      window.setTimeout(() => {
+        const reminder = document.createElement('p');
+        reminder.textContent = 'Lembrete: ' + label;
+        document.querySelector('#reminders').append(reminder);
+        if (autoRead.checked) queueSpeech(reminder.textContent);
+      }, Math.max(0, due * 1000 - Date.now()));
+    }
     if (local) {
       answer.textContent = reply;
       activity.firstElementChild.textContent = 'Pedido processado localmente';
