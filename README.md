@@ -57,20 +57,21 @@ Abre **Memórias** para consultar, editar, apagar ou exportar registos. No chat,
 
 O servidor guarda memórias e horários em `~/.jarvis-portatil/default.sqlite3`. Define `JARVIS_PROFILE` antes de arrancar para carregar outro perfil local. O histórico no navegador usa o mesmo nome de perfil e fica associado ao endereço onde abres o JARVIS.
 
-Em **Rotina de programação**, podes executar a rotina ou agendá-la para amanhã às 09:00. O JARVIS usa a hora local do Windows, guarda o horário e executa a rotina quando o servidor está em funcionamento. A rotina pede ao VS Code que abra a pasta do JARVIS e lista as notas da última sessão.
+Em **Rotina de programação**, podes executar a rotina ou agendá-la para amanhã às 09:00. O JARVIS usa a hora local do Windows, guarda o horário e executa a rotina quando o servidor está em funcionamento. A rotina pede ao VS Code que abra a pasta do JARVIS e abre as notas da última sessão. Podes indicar outro destino autorizado na memória de tipo projeto «projeto de programação».
 
 Para a lista de compras, usa «Adiciona pão à lista de compras», «Marca como comprado pão na lista de compras», «Remove pão da lista de compras» e «Mostra a lista de compras».
 
-Corre `python -m scripts.backup_memory memoria.sqlite3` para copiar o perfil atual. Para restaurar sem substituir um perfil existente, corre `python -m scripts.backup_memory memoria.sqlite3 --restore-to recuperado`. O histórico guardado no navegador fica separado desta cópia.
+Corre `python -m scripts.backup_memory memoria.sqlite3` para copiar o perfil atual. Para restaurar sem substituir um perfil existente, corre `python -m scripts.backup_memory memoria.sqlite3 --restore-to recuperado`. A cópia inclui as definições de voz do perfil. O histórico guardado no navegador fica separado.
 
 Para organizar ficheiros dentro do projeto, usa `Renomeia "rascunho.txt" para "nota.txt"`, `Move "nota.txt" para "notes/nota.txt"` ou «Encontra duplicados». O movimento requer uma pasta de destino existente e um sistema de ficheiros com ligações rígidas. Os duplicados são agrupados por conteúdo e apresentados para revisão.
 
 ### Comandos da Fase 3
 
-- **PDFs:** «Procura nos PDFs temporizadores», «Procura nos PDFs com OCR temporizadores» e `Resume o PDF "notas.pdf"`. Instala `pypdf` para pesquisar e resumir PDFs. Para OCR, instala também Poppler com `pdftoppm` e Tesseract. A pesquisa mostra a página e faz OCR a pedido nas primeiras 20 páginas sem texto.
+- **PDFs:** «Procura nos PDFs temporizadores», «Procura nos PDFs com OCR temporizadores» e `Resume o PDF "notas.pdf"`. Instala `pypdf` para pesquisar e resumir PDFs. Para OCR, instala também Poppler com `pdftoppm` e Tesseract. A pesquisa mostra ligações por página e atualiza o índice ao consultar os ficheiros. O OCR a pedido cobre páginas sem texto dentro das primeiras 20 páginas de cada PDF.
 - **Agenda local:** `Cria um evento "Reunião" em 2026-11-15 10:00 por 30 minutos`, «Mostra a agenda de amanhã», «Reagenda o evento 1 para 2026-11-15 11:00» e «Avisa-me 10 minutos antes do evento 1». Mantém o chat aberto para receber os avisos.
 - **Rotinas:** «Bom dia» mostra a agenda e as tarefas. «Fecha o dia» guarda uma nota com as tarefas. `Quando aparecer "pronto.txt" e existir "ok.txt", ativa o modo programação` guarda uma regra que executa uma vez enquanto o servidor estiver aberto.
 - **Ficheiros:** `Comprime "nota.txt" para "nota.zip"`, `Extrai "nota.zip" para "extraido"`, `Copia "nota.txt" para "backup.txt"` e `Converte "nota.txt" para "nota.md"`.
+- **Downloads:** «Previsualiza a organização de Downloads» mostra um plano. Revê-o e usa «Aprova o plano de Downloads 1» com o número recebido. Para testar noutra pasta, define `JARVIS_DOWNLOADS_DIR` antes de arrancar.
 - **Windows:** «Consulta a bateria», «Consulta o armazenamento da unidade C», «Faz uma captura de ecrã», «Mostra os monitores» e `Move a janela "Calculadora" para o monitor 2`. As capturas são guardadas na pasta `capturas/` do projeto e requerem Pillow.
 
 ## Verificar a base local

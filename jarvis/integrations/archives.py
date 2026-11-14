@@ -6,6 +6,8 @@ from pathlib import Path, PurePosixPath
 
 from .project_files import safe_path
 
+MANY = re.compile(r'(comprime|faz backup de) (".+?") para "([^"]+)"[.!]?', re.I)
+PATHS = re.compile(r'"[^"]+"(?:\s*,\s*"[^"]+")+')
 COMMAND = re.compile(r'(comprime|extrai|converte|copia) "([^"]+)" para "([^"]+)"[.!]?', re.I)
 
 
@@ -38,6 +40,21 @@ def extract_archive(source, target):
 
 
 def archive_command(text, root):
+    many = MANY.fullmatch(text)
+    if many and (many[1].casefold() == "faz backup de" or PATHS.fullmatch(many[2])):
+        raw_paths = many[2]
+        if not PATHS.fullmatch(raw_paths) and not re.fullmatch(r'"[^"]+"', raw_paths):
+            raise ValueError("Indica caminhos entre aspas, separados por vírgulas.")
+        sources = [safe_path(root, name) for name in re.findall(r'"([^"]+)"', raw_paths)]
+        target = safe_path(root, many[3])
+        if target.suffix.lower() != ".zip" or any(not path.is_file() for path in sources):
+            raise ValueError("Indica ficheiros existentes e um destino .zip.")
+        if len(set(sources)) != len(sources):
+            raise ValueError("Remove os ficheiros repetidos da seleção.")
+        with zipfile.ZipFile(target, "x", compression=zipfile.ZIP_DEFLATED) as archive:
+            for source in sources:
+                archive.write(source, source.relative_to(root).as_posix())
+        return f"Arquivo de {len(sources)} ficheiro(s) em {target.relative_to(root)}."
     match = COMMAND.fullmatch(text)
     if not match:
         return None

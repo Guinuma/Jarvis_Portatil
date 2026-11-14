@@ -14,6 +14,16 @@ def schedule_programming(memory, when):
     return f"Modo programação agendado para {when:%d/%m/%Y às %H:%M}."
 
 
+def programming_project(memory, root):
+    saved = memory.execute("SELECT value FROM memories WHERE name = 'projeto de programação' AND kind = 'projeto'")
+    if not saved:
+        return root
+    matches = resolve_project(saved[0]["value"], root)
+    if len(matches) != 1:
+        raise ValueError("O projeto de programação tem de identificar uma única pasta autorizada.")
+    return matches[0][1]
+
+
 def run_programming(root):
     open_project(root)
     session, paths = latest_notes(root)
@@ -32,7 +42,7 @@ def run_now(memory, root):
 
 def finish_run(memory, root, task_id):
     try:
-        result = run_programming(root)
+        result = run_programming(programming_project(memory, root))
         status = "concluída"
     except (OSError, ValueError, RuntimeError) as error:
         result = {"erro": str(error)}
@@ -61,6 +71,12 @@ def tomorrow_at_nine(now=None):
 
 
 def daily_routine(command, memory, root):
+    timed = re.fullmatch(r"agenda o modo programacao para (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})", command)
+    if timed:
+        when = datetime.fromisoformat(f"{timed[1]}T{timed[2]}")
+        if when <= datetime.now():
+            raise ValueError("Escolhe uma data e hora futuras.")
+        return schedule_programming(memory, when)
     if command == "modo estudo":
         records = memory.execute("SELECT value FROM memories WHERE name = 'projeto de estudo' AND kind = 'projeto'")
         if not records:
@@ -71,20 +87,37 @@ def daily_routine(command, memory, root):
         name, folder = matches[0]
         open_project(folder)
         return f"Modo estudo: pedi ao VS Code para abrir {name}."
-    if command == "bom dia":
-        return agenda_command("Mostra a agenda", memory) + "\n\n" + agenda_command("Mostra as tarefas", memory)
-    if command == "fecha o dia":
-        pending = agenda_command("Mostra as tarefas", memory)
-        saved = file_command("Guarda uma nota Fecho do dia · " + pending.replace("\n", " · "), root)
-        return pending + "\n\n" + saved
     if command == "faz como da ultima vez":
         completed = memory.execute(
-            "SELECT id FROM routines WHERE status = 'concluída' ORDER BY finished DESC LIMIT 1"
+            "SELECT result, finished FROM routines WHERE status = 'concluída' ORDER BY finished DESC LIMIT 2"
         )
         if not completed:
-            return "Ainda não há uma execução do modo programação para repetir."
-        return "A última rotina registada foi o modo programação. Diz «ativa o modo programação» para repetir."
-    return None
+            return "Ainda não há uma rotina concluída para repetir."
+        latest = json.loads(completed[0]["result"]).get("rotina", "modo programação")
+        if len(completed) == 2 and completed[0]["finished"] == completed[1]["finished"]:
+            other = json.loads(completed[1]["result"]).get("rotina", "modo programação")
+            if other != latest:
+                return f"Queres repetir «{latest}» ou «{other}»?"
+        if latest == "modo programação":
+            result = run_now(memory, root)
+            return "Modo programação repetido." if "erro" not in result else result["erro"]
+        command = latest
+    if command == "bom dia":
+        result = agenda_command("Mostra a agenda", memory) + "\n\n" + agenda_command("Mostra as tarefas", memory)
+    elif command == "fecha o dia":
+        pending = agenda_command("Mostra as tarefas", memory)
+        saved = file_command("Guarda uma nota Fecho do dia · " + pending.replace("\n", " · "), root)
+        result = pending + "\n\n" + saved
+    else:
+        return None
+    now = datetime.now().timestamp()
+    memory.execute(
+        "INSERT INTO routines (due, status, result, finished) VALUES (?, 'concluída', ?, ?)",
+        (now, json.dumps({"rotina": command, "resposta": result}, ensure_ascii=False), now),
+    )
+    return result
+
+
 
 FILE_RULE = re.compile(
     r'quando aparecer "([^"]+)"(?: e existir "([^"]+)")?, ativa o modo programação[.!]?',

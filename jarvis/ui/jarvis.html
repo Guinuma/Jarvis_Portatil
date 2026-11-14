@@ -79,6 +79,10 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
       <p>Abre a pasta JARVIS no VS Code e procura as notas da última sessão.</p>
       <button type="button" data-routine="Ativa o modo programação">Executar agora</button>
       <button type="button" data-routine="Amanhã às nove, ativa o modo programação">Agendar para amanhã às 09:00</button>
+      <form id="routine-editor">
+        <label>Data e hora <input type="datetime-local" name="when" required></label>
+        <button type="submit">Agendar</button>
+      </form>
       <ul id="routine-history"></ul>
     </details>
     <p id="notice" role="alert"></p>
@@ -221,8 +225,9 @@ function localPortugueseVoices() {
   );
 }
 
+let preferredVoice = "";
 function refreshVoiceOptions() {
-  const selected = speechVoice.value;
+  const selected = preferredVoice || speechVoice.value;
   const voices = localPortugueseVoices();
   speechVoice.replaceChildren(new Option('Automática', ''));
   for (const voice of voices) {
@@ -505,6 +510,14 @@ form.addEventListener('submit', async event => {
     }
     if (local) {
       answer.textContent = reply;
+      for (const source of result.links || []) {
+        const link = document.createElement('a');
+        link.href = source.url;
+        link.textContent = source.label;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        answer.append(document.createElement('br'), link);
+      }
       activity.firstElementChild.textContent = 'Pedido processado localmente';
       readStreamedText(speech, reply, true);
     }
@@ -569,7 +582,7 @@ async function memoryAction(action) {
     routineHistory.replaceChildren();
     for (const routine of result.routines) {
       const row = document.createElement('li');
-      row.textContent = new Date(routine.due * 1000).toLocaleString('pt-PT') + ' · ' + routine.status +
+      row.textContent = new Date((routine.finished || routine.due) * 1000).toLocaleString('pt-PT') + ' · ' + routine.status +
         (routine.result ? ' · ' + routine.result : '');
       routineHistory.append(row);
     }
@@ -625,6 +638,12 @@ document.querySelector('#new-chat').addEventListener('click', () => {
 showHistory();
 renderHistorySearch();
 const routinePanel = document.querySelector('#routine-panel');
+document.querySelector('#routine-editor').addEventListener('submit', event => {
+  event.preventDefault();
+  if (send.disabled) return;
+  input.value = 'Agenda o modo programação para ' + event.currentTarget.elements.when.value.replace('T', ' ');
+  form.requestSubmit();
+});
 routinePanel.addEventListener('toggle', () => { if (routinePanel.open) memoryAction('list'); });
 for (const button of routinePanel.querySelectorAll('[data-routine]')) {
   button.addEventListener('click', () => {
@@ -646,5 +665,32 @@ async function checkAgendaAlerts() {
   } catch {}
 }
 setInterval(checkAgendaAlerts, 10000);
+async function loadVoiceSettings() {
+  try {
+    const response = await fetch('/memory', {method:'POST', headers, body:JSON.stringify({action:'list'})});
+    if (!response.ok) return;
+    const {voice_settings: settings} = await response.json();
+    if (!settings || voiceSettingsChanged) return;
+    preferredVoice = settings.voice;
+    speechRate.value = settings.speed;
+    autoRead.checked = settings.automatic && Boolean(synthesis);
+    if (synthesis) refreshVoiceOptions();
+  } catch {}
+}
+let voiceSettingsChanged = false;
+let saveVoiceSettings = Promise.resolve();
+for (const control of [speechVoice, speechRate, autoRead]) {
+  control.addEventListener('change', () => {
+    voiceSettingsChanged = true;
+    if (control === speechVoice) preferredVoice = speechVoice.value;
+    const body = JSON.stringify({action:'settings', voice:preferredVoice || speechVoice.value,
+      speed:speechRate.value, automatic:autoRead.checked});
+    saveVoiceSettings = saveVoiceSettings.then(async () => {
+      const response = await fetch('/memory', {method:'POST', headers, body});
+      if (!response.ok) throw new Error();
+    }).catch(() => { voiceStatus.textContent = 'Não consegui guardar as definições de voz.'; });
+  });
+}
+loadVoiceSettings();
 </script>
 </html>

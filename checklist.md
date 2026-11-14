@@ -163,12 +163,12 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 ### Memória
 
 - [ ] Guardar uma preferência e demonstrar que é aplicada numa conversa posterior.
-- [ ] Guardar um contacto e recuperá-lo pelo nome.
-- [ ] Guardar um projeto e recuperar a pasta associada.
-- [ ] Guardar um nome de dispositivo e resolvê-lo num pedido posterior.
-- [ ] Guardar uma rotina com o nome escolhido e recuperá-la por esse nome.
+- [x] Guardar um contacto e recuperá-lo pelo nome.
+- [x] Guardar um projeto e recuperar a pasta associada.
+- [x] Guardar um nome de dispositivo e resolvê-lo num pedido posterior.
+- [x] Guardar uma rotina com o nome escolhido e recuperá-la por esse nome.
 - [ ] Interpretar «lembra-te disto», guardar a informação indicada e mostrá-la no editor.
-- [ ] Interpretar «esquece isto» e confirmar que a memória selecionada deixa de ser recuperada.
+- [x] Interpretar «esquece isto» e confirmar que a memória selecionada deixa de ser recuperada.
 - [x] Pesquisar conversas anteriores e abrir a conversa onde aparece o resultado.
 - [ ] Identificar nas respostas se uma afirmação veio de uma memória guardada ou de uma dedução.
 - [x] Mostrar a data e a origem de cada memória.
@@ -181,10 +181,10 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [x] Pesquisar texto em PDFs nas pastas autorizadas.
 - [x] Pesquisar transcrições guardadas nas pastas autorizadas.
-- [ ] Indexar o texto de documentos digitalizados por reconhecimento ótico de caracteres e encontrar uma passagem que só exista na imagem.
-- [ ] Resumir um documento encontrado e apresentar a ligação para o original.
-- [ ] Responder a perguntas com ligações para as fontes e páginas quando aplicável.
-- [ ] Atualizar o índice quando um ficheiro é criado, alterado, movido ou apagado. Testar os quatro casos.
+- [x] Indexar o texto de documentos digitalizados por OCR a pedido e encontrar uma passagem que só exista na imagem. Testado com PDF digitalizado e atualização do índice.
+- [x] Resumir um documento encontrado e apresentar a ligação para o original.
+- [x] Responder a perguntas com ligações para as fontes e páginas quando aplicável.
+- [x] Atualizar o índice quando um ficheiro é criado, alterado, movido ou apagado. Testar os quatro casos.
 
 ### Windows e aplicações
 
@@ -195,19 +195,19 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [x] Consultar o armazenamento e apresentar o espaço disponível na unidade pedida.
 - [x] Fazer uma captura de ecrã e devolver o ficheiro criado.
 - [ ] Ler a seleção ativa a pedido e apresentar o texto selecionado.
-- [ ] Ler a área de transferência a pedido e confirmar que a ferramenta só a consulta quando autorizada.
+- [x] Ler a área de transferência a pedido e confirmar que a ferramenta só a consulta quando autorizada.
 - [ ] Criar espaços de trabalho como «modo estudo» e «modo programação» e verificar as aplicações, pastas e janelas abertas para cada um.
 
 ### Ficheiros e documentos
 
 - [x] Renomear um ficheiro e confirmar o novo nome. Validado numa pasta de teste.
 - [x] Mover um ficheiro e confirmar que está no destino. O teste confirmou também a recusa de sobrescrita.
-- [ ] Pré-visualizar uma reorganização de Downloads e aplicar apenas os movimentos aprovados.
+- [x] Pré-visualizar uma reorganização de Downloads e aplicar apenas os movimentos aprovados.
 - [x] Identificar duplicados por SHA-256 e apresentar os caminhos. Validado com ficheiros de teste.
-- [ ] Comprimir os ficheiros selecionados e confirmar o conteúdo do arquivo.
+- [x] Comprimir os ficheiros selecionados e confirmar o conteúdo do arquivo.
 - [x] Extrair um arquivo para a pasta escolhida e confirmar os ficheiros extraídos.
 - [x] Converter um ficheiro para o formato pedido e verificar que abre no formato de destino.
-- [ ] Preparar uma cópia de segurança de ficheiros selecionados e restaurar um ficheiro de teste para confirmar que é utilizável.
+- [x] Preparar uma cópia de segurança de ficheiros selecionados e restaurar um ficheiro de teste para confirmar que é utilizável.
 
 ### Agenda e tarefas
 
@@ -227,9 +227,9 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 ### Rotinas e fluxos
 
 - [x] Criar uma regra do tipo «quando acontecer X, faz Y» e testar que reage ao evento escolhido.
-- [ ] Agendar uma rotina e confirmar que arranca à hora configurada.
+- [x] Agendar o modo programação e confirmar que arranca à hora configurada com relógio de teste.
 - [x] Adicionar uma condição a uma rotina e testar os casos em que é verdadeira e falsa.
-- [ ] Pré-visualizar as etapas, os destinos e os efeitos previstos de uma rotina.
+- [x] Pré-visualizar as etapas, os destinos e os efeitos previstos de uma rotina.
 - [ ] Executar uma rotina manualmente a partir do painel, independentemente do horário.
 - [ ] Mostrar o histórico da rotina com a hora, os passos executados e o resultado.
 - [x] Configurar «bom dia» para preparar a agenda e mostrar as tarefas do dia.
@@ -249,8 +249,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Extensões e manutenção
 
-- [ ] Criar cópias de segurança das definições, memórias e rotinas.
-- [ ] Restaurar uma cópia de segurança de teste e verificar que recupera as definições, memórias e rotinas esperadas.
+- [x] Criar cópias de segurança das definições, memórias e rotinas.
+- [x] Restaurar uma cópia de segurança de teste e verificar que recupera as definições, memórias e rotinas esperadas.
 
 ### Validação parcial
 
@@ -262,7 +262,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [x] Enviar o pedido combinado pela API local e confirmar o registo da memória, a localização da nota de teste e o agendamento para as 09:00.
 - [x] Reabrir a base local, avançar o relógio de teste e confirmar que a rotina é executada uma vez, com o VS Code simulado.
-- [x] Criar e restaurar uma cópia SQLite de memórias e rotinas num perfil novo. A cópia das restantes definições continua por testar.
+- [x] Criar e restaurar uma cópia SQLite de memórias e rotinas num perfil novo. O teste de aceitação inclui também as definições de voz do perfil.
 - [x] Validar no Chromium a seleção de uma memória com dados de teste e a pesquisa e reabertura de uma conversa guardada no navegador.
 
 ### Teste de aceitação de memória e rotinas
@@ -270,9 +270,10 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 > «Lembra-te de que o meu projeto principal é o JARVIS. Encontra a nota onde escrevi sobre temporizadores e, amanhã às nove, ativa o modo programação.»
 
 - [x] Confirmar que a memória apresenta a informação, a data e a origem.
-- [ ] Confirmar que a pesquisa encontra a passagem e permite abrir a nota.
-- [ ] Editar a memória do projeto, reiniciar o JARVIS antes da hora agendada e confirmar que o valor editado continua disponível.
-- [ ] Confirmar que a rotina continua agendada após o reinício, dispara às nove e abre o espaço de trabalho configurado.
+- [x] Confirmar que a pesquisa encontra a passagem e permite abrir a nota.
+- [x] Editar a memória do projeto, reabrir os dados da sessão agendada e confirmar que o valor editado continua disponível no teste automatizado.
+- [x] Confirmar que a rotina continua agendada após reabrir os dados, dispara às nove no relógio de teste e pede ao VS Code para abrir o projeto e as notas.
+- [ ] Validar o disparo às nove num reinício real, com o VS Code e o relógio do Windows.
 
 ## Fase 4 — Tarefas em vários passos
 

@@ -17,6 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Event, Thread
 from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, quote, urlsplit
 from urllib.request import Request, urlopen
 
 from .integrations.editor import normalize, open_project, project_request, resolve_project
@@ -26,11 +27,12 @@ from .integrations.archives import archive_command
 from .integrations.documents import pdf_command
 from .integrations.desktop import desktop_query
 from .integrations.organize import organize_files
-from .integrations.project_files import file_command
+from .integrations.project_files import file_command, safe_path
 from .integrations.reminders import COMBINED, parse_reminder
 from .integrations.windows import windows_command
 
 from .agenda import agenda_command, due_alerts
+from .downloads import downloads_command
 from .memory import Memory
 from .routines import check_file_rules, daily_routine, file_rule_command, run_due, run_now, schedule_programming, tomorrow_at_nine
 
@@ -71,9 +73,24 @@ class Handler(BaseHTTPRequestHandler):
                 memory.save(data["name"], data["kind"], data["value"], "Editor")
             elif data["action"] == "delete":
                 memory.delete(data["name"])
+            elif data["action"] == "settings":
+                voice = data["voice"]
+                speed = data["speed"]
+                automatic = data["automatic"]
+                if not isinstance(voice, str) or len(voice) > 256 or speed not in {"0.8", "1", "1.2"} or not isinstance(automatic, bool):
+                    raise ValueError("Definições de voz inválidas.")
+                memory.execute(
+                    "INSERT INTO settings VALUES ('voice', ?) ON CONFLICT(name) DO UPDATE SET value=excluded.value",
+                    (json.dumps({"voice": voice, "speed": speed, "automatic": automatic}),),
+                )
             elif data["action"] != "list":
                 raise ValueError("Ação desconhecida.")
-            return self.send_content(200, {"records": memory.list(), "routines": memory.execute("SELECT * FROM routines ORDER BY id DESC LIMIT 30")})
+            settings = memory.execute("SELECT value FROM settings WHERE name = 'voice'")
+            return self.send_content(200, {
+                "records": memory.list(),
+                "routines": memory.execute("SELECT * FROM routines ORDER BY id DESC LIMIT 30"),
+                "voice_settings": json.loads(settings[0]["value"]) if settings else None,
+            })
         except (KeyError, TypeError, AttributeError, ValueError):
             return self.send_content(400, {"error": "Revê o nome, o tipo e o texto da memória."})
         except (OSError, sqlite3.Error):
@@ -93,6 +110,19 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        url = urlsplit(self.path)
+        if url.path == "/pdf":
+            local_hosts = {f"localhost:{self.server.server_port}", f"127.0.0.1:{self.server.server_port}"}
+            if self.headers.get("Host") not in local_hosts or self.headers.get("Sec-Fetch-Site") == "cross-site":
+                return self.send_content(403, {"error": "Abre o PDF a partir do JARVIS local."})
+            try:
+                name, = parse_qs(url.query)["path"]
+                path = safe_path(ROOT, name)
+                if path.suffix.lower() != ".pdf" or path.stat().st_size > 32 * 1024 * 1024:
+                    raise ValueError
+                return self.send_content(200, path.read_bytes(), "application/pdf")
+            except (OSError, KeyError, ValueError, RuntimeError):
+                return self.send_content(404, {"error": "PDF indisponível."})
         if self.path == "/":
             page = (PACKAGE / "ui" / "jarvis.html").read_bytes()
             profile = local_memory().path.stem.encode("ascii")
@@ -187,6 +217,8 @@ class Handler(BaseHTTPRequestHandler):
                 memory_reply = daily_routine(normalize(text).rstrip(".!?"), memory, ROOT)
             if memory_reply is None:
                 memory_reply = file_rule_command(text, memory, ROOT)
+            if memory_reply is None:
+                memory_reply = downloads_command(text, memory)
         except ValueError as error:
             return self.send_content(400, {"error": str(error)})
         except (OSError, sqlite3.Error, KeyError, TypeError, RuntimeError):
@@ -272,18 +304,22 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_content(200, {"reply": f"Pedi ao VS Code para abrir o projeto {name}."})
 
 
+        sources = []
         try:
             file_reply = archive_command(text, ROOT)
             if file_reply is None:
                 file_reply = organize_files(text, ROOT)
             if file_reply is None:
-                file_reply = pdf_command(text, ROOT)
+                file_reply = pdf_command(text, ROOT, memory, sources)
             if file_reply is None:
                 file_reply = file_command(text, ROOT)
-        except (OSError, ValueError, RuntimeError, BadZipFile) as error:
+        except (OSError, ValueError, RuntimeError, BadZipFile, sqlite3.Error) as error:
             return self.send_content(400, {"error": f"Ficheiro indisponível: {error}"})
         if file_reply is not None:
-            return self.send_content(200, {"reply": file_reply})
+            links = [{"label": name + (f" · página {number}" if number else ""),
+                      "url": "/pdf?path=" + quote(name) + (f"#page={number}" if number else "")}
+                     for name, number in sources]
+            return self.send_content(200, {"reply": file_reply, "links": links})
 
         if sys.platform == "win32":
             try:

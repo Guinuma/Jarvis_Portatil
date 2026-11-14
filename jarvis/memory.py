@@ -44,6 +44,16 @@ class Memory:
                 id INTEGER PRIMARY KEY, event_path TEXT NOT NULL, condition_path TEXT,
                 status TEXT NOT NULL DEFAULT 'pendente', result TEXT
             )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS pdf_index (
+                path TEXT NOT NULL, ocr INTEGER NOT NULL, stamp TEXT NOT NULL,
+                pages TEXT NOT NULL, PRIMARY KEY(path, ocr)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS download_plans (
+                id INTEGER PRIMARY KEY, root TEXT NOT NULL, files TEXT NOT NULL, claimed INTEGER NOT NULL DEFAULT 0
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS settings (
+                name TEXT PRIMARY KEY, value TEXT NOT NULL
+            )""")
             return [dict(row) for row in connection.execute(query, parameters)]
 
     def list(self):
@@ -97,9 +107,18 @@ class Memory:
         if match:
             self.delete(match[1])
             return "Memória removida."
-        match = re.fullmatch(r"(?:jarvis[, ]+)?(?:consulta|mostra) (?:a )?memória (.+)", text, re.I)
+        match = re.fullmatch(
+            r"(?:jarvis[, ]+)?(?:consulta|mostra) (?:(?:a|o) )?"
+            r"(memória|preferência|contacto|projeto|dispositivo|rotina) (.+)",
+            text, re.I,
+        )
         if match:
-            records = self.execute("SELECT * FROM memories WHERE name = ?", (match[1].strip().casefold(),))
+            kind = match[1].casefold()
+            name = match[2].strip().rstrip(".!?").casefold()
+            records = self.execute(
+                "SELECT * FROM memories WHERE name = ? AND (? = 'memória' OR kind = ?)",
+                (name, kind, kind),
+            )
             if records:
                 record = records[0]
                 return f"Memória guardada ({record['source']}, {record['updated'][:10]}): {record['value']}"
