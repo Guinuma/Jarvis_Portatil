@@ -45,7 +45,7 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
     </form>
     <div class="voice-controls">
       <button type="button" id="dictate" aria-keyshortcuts="Alt+Shift+D" title="Alt+Shift+D">Ditar</button>
-      <button type="button" id="stop-speech" hidden>Parar leitura</button>
+      <button type="button" id="stop-speech" aria-keyshortcuts="Escape" hidden>Parar leitura</button>
       <label><input type="checkbox" id="auto-read"> Ler respostas automaticamente</label>
       <label>Voz <select id="speech-voice"><option value="">Automática</option></select></label>
       <label>Velocidade <select id="speech-rate">
@@ -59,7 +59,8 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
       <span id="microphone-status" role="status">Microfone inativo</span>
       <span id="voice-status" role="status"></span>
     </div>
-    <p id="speech-caption" hidden></p>
+    <p id="speech-caption" role="status" hidden></p>
+    <p id="transcript-preview" role="status"></p>
     <div id="reminders" role="log" aria-label="Avisos de lembretes"></div>
     <details id="memory-panel">
       <summary>Memórias</summary>
@@ -89,7 +90,7 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
   </section>
   <aside class="panel" aria-labelledby="activity-heading">
     <h2 id="activity-heading">Atividade do Hermes</h2>
-    <ul id="activity"><li>À espera de um pedido.</li></ul>
+    <div role="log" aria-label="Atividade das ferramentas"><ul id="activity"><li>À espera de um pedido.</li></ul></div>
   </aside>
 </main>
 <script>
@@ -123,7 +124,7 @@ function renderHistorySearch() {
     button.type = 'button';
     button.textContent = session.messages[0].content.slice(0, 100);
     button.onclick = () => {
-      if (requestController) return;
+      if (requestController || recognition) return;
       sessionId = session.id;
       history = session.messages;
       showHistory();
@@ -294,11 +295,85 @@ function readStreamedText(session, text, complete = false) {
 }
 
 document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    interruptSpeech();
+    recognition?.stop();
+    requestController?.abort();
+    return;
+  }
   if (event.code !== 'KeyD' || !event.altKey || !event.shiftKey || event.ctrlKey ||
       event.metaKey || event.repeat || event.isComposing || dictate.disabled) return;
   event.preventDefault();
   dictate.click();
 });
+
+async function recordLocalVoice() {
+  interruptSpeech();
+  dictate.disabled = true;
+  send.disabled = true;
+  const originalDraft = input.value;
+  let timer;
+  function finish() {
+    clearTimeout(timer);
+    capture?.getTracks().forEach(track => track.stop());
+    capture = undefined;
+    recognition = undefined;
+    dictate.disabled = false;
+    dictate.textContent = 'Ditar';
+    microphoneStatus.textContent = 'Microfone inativo';
+    send.disabled = Boolean(requestController);
+    input.focus();
+  }
+  try {
+    capture = await navigator.mediaDevices.getUserMedia({audio: microphone.value
+      ? {deviceId:{exact:microphone.value}} : true});
+    const recorder = new MediaRecorder(capture);
+    const chunks = [];
+    recognition = {stop: () => recorder.state !== 'inactive' && recorder.stop()};
+    recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+    recorder.onerror = () => { voiceStatus.textContent = 'Falha na gravação. Tenta novamente.'; finish(); };
+    recorder.onstop = async () => {
+      clearTimeout(timer);
+      capture?.getTracks().forEach(track => track.stop());
+      dictate.disabled = true;
+      microphoneStatus.textContent = 'Microfone inativo';
+      voiceStatus.textContent = 'A transcrever no computador…';
+      try {
+        const bytes = new Uint8Array(await new Blob(chunks).arrayBuffer());
+        let binary = '';
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        const response = await fetch('/transcribe', {method:'POST', headers,
+          signal:AbortSignal.timeout(90000),
+          body: JSON.stringify({audio:btoa(binary)})});
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error);
+        if (!result.text) throw new Error('Não reconheci voz. Tenta falar mais perto do microfone.');
+        if (requestController && /^cancela[.!?]?$/i.test(result.text.trim())) {
+          requestController.abort();
+          input.value = originalDraft;
+          voiceStatus.textContent = 'Pedido cancelado por voz.';
+        } else {
+          input.value = result.text;
+          document.querySelector('#transcript-preview').textContent = result.text;
+          voiceStatus.textContent = 'Revê a transcrição e prime Enviar.';
+        }
+      } catch (error) {
+        input.value = originalDraft;
+        voiceStatus.textContent = error.message || 'Não consegui transcrever.';
+      } finally { finish(); }
+    };
+    recorder.start();
+    dictate.disabled = false;
+    dictate.textContent = 'Parar ditado';
+    microphoneStatus.textContent = 'Microfone ativo';
+    voiceStatus.textContent = 'A gravar localmente. Prime Parar ditado quando terminares (máximo 60 segundos).';
+    timer = setTimeout(() => recognition?.stop(), 60000);
+    refreshMicrophones().catch(() => {});
+  } catch {
+    voiceStatus.textContent = 'Permite o acesso ao microfone e confirma o dispositivo selecionado.';
+    finish();
+  }
+}
 
 dictate.addEventListener('click', async () => {
   if (recognition) {
@@ -307,9 +382,7 @@ dictate.addEventListener('click', async () => {
     return;
   }
   if (typeof Recognition?.available !== 'function' || !('processLocally' in Recognition.prototype)) {
-    microphoneStatus.textContent = 'Microfone indisponível';
-    voiceStatus.textContent = 'Este navegador não disponibiliza ditado local. Podes escrever o pedido.';
-    return;
+    return recordLocalVoice();
   }
   interruptSpeech();
   dictate.disabled = true;
@@ -332,9 +405,8 @@ dictate.addEventListener('click', async () => {
       const canInstall = ['downloadable', 'downloading'].includes(availability)
         && typeof Recognition.install === 'function';
       if (!canInstall || !await Recognition.install(options)) {
-        voiceStatus.textContent = 'O ditado local em português de Portugal está indisponível.';
-        finish('Microfone indisponível');
-        return;
+        finish();
+        return recordLocalVoice();
       }
     }
     const session = new Recognition();
@@ -354,6 +426,7 @@ dictate.addEventListener('click', async () => {
       if (recognition !== session) return;
       const result = event.results[0];
       input.value = result[0].transcript.trim().slice(0, input.maxLength);
+      document.querySelector('#transcript-preview').textContent = input.value;
       final = result.isFinal;
       if (final && requestController && /^cancela[.!?]?$/i.test(input.value)) {
         input.value = originalDraft;
@@ -487,6 +560,8 @@ form.addEventListener('submit', async event => {
         pendingReminder = undefined;
       }
       answer.textContent = entry ? 'Lembrete cancelado.' : 'Não há um lembrete pendente para cancelar.';
+      history.push(user, {role:'assistant', content:answer.textContent});
+      saveConversation();
       activity.firstElementChild.textContent = 'Pedido processado localmente';
       status.textContent = 'Pronto';
       streamedSpeech = undefined;
@@ -494,10 +569,11 @@ form.addEventListener('submit', async event => {
     }
     if (correction && !previous) throw new Error('Não há um lembrete pendente para corrigir.');
     const outgoing = previous ? {...user, content: 'Lembra-me ' + correction[1] + ' de ' + previous.label} : user;
+    sessionId ??= crypto.randomUUID();
     const response = await fetch('/chat', {
       signal: controller.signal,
       method: 'POST', headers,
-      body: JSON.stringify({messages: [...history.slice(-8), outgoing]}),
+      body: JSON.stringify({session_id:sessionId, messages: [...history.slice(-18), outgoing]}),
     });
     if (!response.ok) throw new Error((await response.json()).error);
     const local = response.headers.get('Content-Type')?.startsWith('application/json');
@@ -643,7 +719,7 @@ document.querySelector('#memory-export').addEventListener('click', async () => {
 });
 document.querySelector('#history-query').addEventListener('input', renderHistorySearch);
 document.querySelector('#new-chat').addEventListener('click', () => {
-  if (requestController) return;
+  if (requestController || recognition) return;
   sessionId = undefined;
   history = [];
   showHistory();

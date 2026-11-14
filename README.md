@@ -2,7 +2,7 @@
 
 Assistente de voz local no Windows com uma interface controlada por gestos da webcam.
 
-Vê o [checklist de desenvolvimento](checklist.md) para acompanhar as cinco fases do projeto.
+Vê o [checklist de desenvolvimento](checklist.md) para acompanhar as cinco fases do projeto. A validação da Fase 2 fica a cargo do utilizador: [guião completo de testes manuais](docs/TESTES_FASE_2.md).
 
 ## Estrutura do repositório
 
@@ -50,6 +50,22 @@ Outros pedidos locais:
 - «Abre a calculadora» e «Abre o site example.org». As aplicações reconhecidas incluem Calculadora, Bloco de Notas, Explorador e Paint.
 
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
+
+## Instalação e comandos adicionais da Fase 2
+
+Instala as dependências com `python -m pip install -r requirements.txt`. Para preparar o ditado local alternativo, executa `python -m scripts.setup_voice` uma vez com Internet. O modelo Whisper `small` fica em `~/.jarvis-portatil/models/whisper-small`; podes indicar outro caminho compatível com `JARVIS_WHISPER_MODEL` antes de arrancar.
+
+Quando o reconhecimento local do navegador não está disponível, **Ditar** grava até 60 segundos e envia o áudio apenas ao servidor JARVIS no próprio computador. Prime **Parar ditado**, aguarda a transcrição, revê e corrige o texto antes de enviar. Esta alternativa não apresenta palavras em tempo real. Para cancelar um pedido por voz nesta alternativa, diz «cancela» e para o ditado; a ação acontece quando a transcrição termina. **Escape** interrompe a leitura, termina a escuta e cancela o pedido em curso.
+
+Comandos adicionais:
+
+- `Encontra o ficheiro notas no projeto "Física"` e `Procura conteúdo temporizadores no projeto "Física"`: pesquisar noutros projetos autorizados.
+- «Abre esse ficheiro»: usar um resultado único da última pesquisa. Com vários resultados, escolher «opção 1», «opção 2», etc., ou cancelar a seleção.
+- «Consulta o volume», «Define o volume para 25%», «Mostra as saídas de áudio» e «Muda a saída de áudio para NOME»: controlar o som do Windows.
+- `Consulta agenda AAAA-MM-DD` e `Consulta disponibilidade AAAA-MM-DD 09:00 até 18:00`: consultar a **agenda local do perfil**, sem incluir Google Calendar ou Outlook.
+- «A que horas é a reunião de amanhã?» e «Mostra o evento N»: consultar um compromisso; vários compromissos exigem escolher o número do evento.
+
+Os lembretes do chat dependem do separador aberto e não sobrevivem a uma atualização da página. O teste manual de 45 minutos está descrito no guião; não é iniciado automaticamente.
 
 ## Memórias, histórico e rotinas
 

@@ -8,6 +8,30 @@ DAY = re.compile(r'(?:mostra|consulta) (?:a )?agenda(?: (?:de )?(hoje|amanhã|\d
 
 
 def agenda_command(text, memory):
+    selected = re.fullmatch(r'(?:mostra (?:o )?)?evento (\d+)[.!]?', text, re.I)
+    if selected:
+        rows = memory.execute('SELECT * FROM agenda WHERE id = ?', (int(selected[1]),))
+        if not rows:
+            return 'Não encontrei esse evento na agenda local.'
+        event = rows[0]
+        return f'{event["title"]} · {datetime.fromtimestamp(event["starts"]):%d/%m/%Y %H:%M}–{datetime.fromtimestamp(event["ends"]):%H:%M} · agenda local · evento {event["id"]}.'
+    free = re.fullmatch(r'(?:consulta|mostra) (?:a )?disponibilidade (?:em )?(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}) (?:até|a) (\d{2}:\d{2})[.!]?', text, re.I)
+    if free:
+        start = datetime.fromisoformat(f'{free[1]}T{free[2]}').timestamp()
+        end = datetime.fromisoformat(f'{free[1]}T{free[3]}').timestamp()
+        if end <= start:
+            raise ValueError('A hora final deve ser posterior à inicial.')
+        events = memory.execute('SELECT starts, ends FROM agenda WHERE starts < ? AND ends > ? ORDER BY starts', (end, start))
+        cursor, slots = start, []
+        for event in events:
+            if event['starts'] > cursor:
+                slots.append((cursor, min(end, event['starts'])))
+            cursor = max(cursor, event['ends'])
+        if cursor < end:
+            slots.append((cursor, end))
+        return 'Disponibilidade na agenda local (não inclui calendários externos):\n' + ('\n'.join(
+            f'{datetime.fromtimestamp(a):%H:%M}–{datetime.fromtimestamp(b):%H:%M}' for a, b in slots
+        ) or 'Sem períodos livres neste intervalo.')
     alert = re.fullmatch(r"avisa-me (\d+) minutos antes do evento (\d+)[.!]?", text, re.I)
     if alert:
         lead, event_id = map(int, alert.groups())

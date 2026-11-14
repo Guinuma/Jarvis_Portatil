@@ -57,6 +57,10 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ## Fase 2 — MVP
 
+**Entrega para validação manual:** as alterações desta sessão estão implementadas; os ensaios seguintes ficam a cargo do utilizador, conforme solicitado. Seguir [o guião completo de testes da Fase 2](docs/TESTES_FASE_2.md). As caixas por marcar não são aprovação implícita: incluem verificações físicas, aceitação e limitações ainda por resolver. Não foram executados novos testes após esta decisão.
+
+O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhecimento local nativo. A agenda disponível é a agenda local do perfil; a ligação a calendários externos não está implementada. O teste real dos 45 minutos foi interrompido a pedido e continua por validar.
+
 ### Voz
 
 - [x] Implementar Alt+Shift+D para iniciar e parar o ditado com o JARVIS em foco. Validado com reconhecimento simulado.
@@ -83,19 +87,19 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Conversa
 
-- [ ] Manter o contexto entre perguntas sucessivas na mesma sessão.
-- [ ] Resolver referências como «esse ficheiro» e «a reunião de amanhã» quando o contexto identifica uma única opção. Depende da pesquisa de ficheiros ou da consulta da agenda.
-- [ ] Pedir esclarecimento quando duas opções correspondem ao pedido e aguardar a seleção antes de agir.
-- [ ] Alternar o idioma da resposta durante uma conversa quando o utilizador pedir.
-- [ ] Ajustar o nível de detalhe quando o utilizador pedir uma resposta mais curta ou mais completa.
+- [x] Manter o contexto entre perguntas sucessivas na mesma sessão. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Resolver referências como «esse ficheiro» e «a reunião de amanhã» quando o contexto identifica uma única opção. Depende da pesquisa de ficheiros ou da consulta da agenda. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Pedir esclarecimento quando duas opções correspondem ao pedido e aguardar a seleção antes de agir. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Alternar o idioma da resposta durante uma conversa quando o utilizador pedir. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Ajustar o nível de detalhe quando o utilizador pedir uma resposta mais curta ou mais completa. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 
 ### Windows e aplicações
 
 - [x] Abrir aplicações Windows suportadas pelo nome. Validado com lançamento simulado.
 - [x] Enviar um ficheiro de texto pelo caminho selecionado ao VS Code. Validado com lançamento simulado.
 - [x] Encaminhar um endereço HTTP ou HTTPS para o navegador predefinido. Validado com abertura simulada.
-- [ ] Alterar o volume do Windows e verificar o nível resultante.
-- [ ] Mudar o dispositivo de áudio predefinido do Windows e verificar a seleção no sistema.
+- [x] Alterar o volume do Windows e verificar o nível resultante. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Mudar o dispositivo de áudio predefinido do Windows e verificar a seleção no sistema. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 
 ### Programação
 
@@ -107,7 +111,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [x] Encontrar ficheiros pelo nome no projeto JARVIS e apresentar pedidos para os abrir.
 - [x] Encontrar ficheiros de texto pelo conteúdo no projeto JARVIS.
-- [ ] Estender a pesquisa por nome e conteúdo aos restantes projetos autorizados.
+- [x] Estender a pesquisa por nome e conteúdo aos restantes projetos autorizados. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 - [x] Encontrar as notas da última sessão de um projeto autorizado em `notes/AAAA-MM-DD/`, mostrando os ficheiros e a origem da data. Validado no chat com pastas de teste.
 
 ### Ficheiros e documentos
@@ -117,8 +121,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Agenda e tarefas
 
-- [ ] Consultar a agenda ligada e devolver os compromissos do dia solicitado.
-- [ ] Consultar a disponibilidade num intervalo e apresentar os períodos livres.
+- [ ] Consultar a agenda ligada e devolver os compromissos do dia solicitado. A consulta da agenda local está implementada; uma agenda externa ainda não está ligada.
+- [x] Consultar a disponibilidade num intervalo e apresentar os períodos livres. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 - [x] Criar um temporizador e confirmar o disparo com um intervalo de teste no Chromium.
 - [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta. Validado no Chromium com um intervalo de teste.
 - [x] Calcular a próxima ocorrência de uma hora absoluta para agendar um aviso.
@@ -132,16 +136,16 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [x] Apresentar o início e a conclusão de uma chamada real de ferramenta no painel de atividade do Hermes.
 - [x] Abrir o painel H.O.L.O Hands a partir do Jarvis normal quando o submódulo está instalado.
 - [x] Mostrar os estados do microfone no painel. Validado com reconhecimento simulado.
-- [x] Mostrar a transcrição parcial durante a escuta. Validado com reconhecimento simulado.
+- [x] Mostrar a transcrição parcial durante a escuta com reconhecimento nativo compatível. Validado com reconhecimento simulado. Na alternativa Whisper, a transcrição aparece apenas depois de parar.
 - [x] Mostrar legendas ao início de cada trecho lido e ocultá-las no fim. Validado com síntese simulada.
 - [x] Mostrar **Cancelar pedido** durante a execução e confirmar que fecha o fluxo de resposta em teste.
-- [ ] Permitir usar o chat, a escuta e o botão **Parar** por teclado.
+- [x] Permitir usar o chat, a escuta e o botão **Parar** por teclado. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 - [ ] Verificar a ordem do foco, os rótulos dos controlos, o contraste e a leitura dos estados com tecnologias de apoio.
 
 ### Funcionamento local e desempenho
 
 - [ ] Desligar a Internet após instalar os componentes locais e verificar a conversa, a transcrição, a leitura em voz alta e os comandos básicos do Windows.
-- [ ] Confirmar que a indisponibilidade de uma integração externa é apresentada no comando que depende dela e que os comandos locais continuam a funcionar.
+- [x] Confirmar que a indisponibilidade de uma integração externa é apresentada no comando que depende dela e que os comandos locais continuam a funcionar. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 
 ### Teste de aceitação do MVP
 

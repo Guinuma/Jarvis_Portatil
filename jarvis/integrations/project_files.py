@@ -5,7 +5,7 @@ import tempfile
 from datetime import date
 from pathlib import Path
 
-from .editor import normalize, open_project
+from .editor import normalize, open_project, resolve_project
 
 COMMAND = re.compile(
     r"(?:jarvis[, ]+)?(encontra (?:o )?ficheiro|procura (?:por )?conteudo|"
@@ -53,6 +53,21 @@ def search(root, query, content):
 
 
 def file_command(text, root):
+    scoped = re.fullmatch(r'(.+?) no projeto "([^"]+)"[.!]?', text, re.I)
+    if scoped and COMMAND.fullmatch(normalize(scoped[1])):
+        projects = resolve_project(scoped[2], root)
+        if not projects:
+            raise ValueError('Projeto não autorizado.')
+        if len(projects) > 1:
+            return 'Escolhe o projeto pelo caminho completo:\n' + '\n'.join(
+                f'{scoped[1]} no projeto "{path}"' for _, path in projects)
+        folder = projects[0][1]
+        if not folder.is_dir():
+            raise ValueError('O projeto autorizado está indisponível.')
+        reply = file_command(scoped[1], folder)
+        if reply and reply.startswith('Ficheiros encontrados'):
+            reply = '\n'.join(line + f' no projeto "{folder}"' if line.startswith('Abre o ficheiro') else line for line in reply.splitlines())
+        return reply
     match = COMMAND.fullmatch(normalize(text))
     if not match:
         return None
