@@ -22,6 +22,7 @@ body[data-busy] .reactor::before{animation-duration:6s} @keyframes rotate{to{tra
 .bubble{margin:0;max-width:92%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel)}
 .bubble.user{align-self:flex-end;background:#10364b}.bubble.assistant{align-self:flex-start}
 form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);background:#050f1a;border:1px solid var(--line);border-radius:8px;padding:10px}.submit{color:#001621;background:var(--cyan);font-weight:700}
+.voice-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;color:var(--muted)}
 #activity{padding-left:19px;color:var(--muted);overflow-wrap:anywhere}li{margin:0 0 .6em}#notice{margin:10px 0 0;color:#ffb890}#notice:empty{display:none}
 @media(max-width:640px){main{grid-template-columns:1fr;padding:18px 12px}.reactor{width:126px}header{padding:12px}.panel{padding:12px}}
 @media(prefers-reduced-motion:reduce){.reactor::before,.reactor::after{animation:none}}
@@ -39,6 +40,11 @@ form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);backgro
       <input id="prompt" aria-label="Mensagem" placeholder="Escreve um pedido…" maxlength="8000" required>
       <button class="submit" type="submit">Enviar</button>
     </form>
+    <div class="voice-controls">
+      <button type="button" id="dictate">Ditar</button>
+      <button type="button" id="stop-speech" hidden>Parar leitura</button>
+      <span id="voice-status" role="status"></span>
+    </div>
     <p id="notice" role="alert"></p>
   </section>
   <aside class="panel" aria-labelledby="activity-heading">
@@ -49,7 +55,7 @@ form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);backgro
 <script>
 const form = document.querySelector('form');
 const input = document.querySelector('#prompt');
-const send = form.querySelector('button');
+const send = form.querySelector('.submit');
 const messages = document.querySelector('#messages');
 const activity = document.querySelector('#activity');
 const status = document.querySelector('#status');
@@ -57,6 +63,123 @@ const notice = document.querySelector('#notice');
 const holo = document.querySelector('#holo');
 const history = [];
 const headers = {'Content-Type': 'application/json'};
+
+const dictate = document.querySelector('#dictate');
+const stopSpeech = document.querySelector('#stop-speech');
+const voiceStatus = document.querySelector('#voice-status');
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+let utterance;
+
+function interruptSpeech() {
+  if (!utterance) return;
+  utterance = undefined;
+  window.speechSynthesis.cancel();
+  stopSpeech.hidden = true;
+  voiceStatus.textContent = 'Leitura interrompida.';
+}
+stopSpeech.addEventListener('click', interruptSpeech);
+
+function readAloud(text) {
+  interruptSpeech();
+  const voices = window.speechSynthesis.getVoices().filter(
+    voice => voice.localService && /^pt(?:[-_]|$)/i.test(voice.lang)
+  );
+  const voice = voices.find(voice => /^pt[-_]pt$/i.test(voice.lang)) || voices[0];
+  if (!voice) {
+    voiceStatus.textContent = 'Ativa uma voz portuguesa no Windows para ouvir a resposta.';
+    return;
+  }
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.voice = voice;
+  speech.lang = voice.lang;
+  utterance = speech;
+  stopSpeech.hidden = false;
+  voiceStatus.textContent = 'A ler a resposta…';
+  function finish(message) {
+    if (utterance !== speech) return;
+    utterance = undefined;
+    stopSpeech.hidden = true;
+    voiceStatus.textContent = message;
+  }
+  speech.onend = () => finish('Leitura concluída.');
+  speech.onerror = () => finish('Não foi possível reproduzir o áudio.');
+  window.speechSynthesis.speak(speech);
+}
+
+dictate.addEventListener('click', async () => {
+  if (recognition) {
+    dictate.disabled = true;
+    recognition.stop();
+    return;
+  }
+  if (typeof Recognition?.available !== 'function' || !('processLocally' in Recognition.prototype)) {
+    voiceStatus.textContent = 'Este navegador não disponibiliza ditado local. Podes escrever o pedido.';
+    return;
+  }
+  interruptSpeech();
+  dictate.disabled = true;
+  send.disabled = true;
+  voiceStatus.textContent = 'A verificar o ditado local…';
+  function finish() {
+    recognition = undefined;
+    dictate.textContent = 'Ditar';
+    dictate.disabled = false;
+    send.disabled = false;
+    input.focus();
+  }
+  try {
+    const options = {langs: ['pt-PT'], processLocally: true};
+    const availability = await Recognition.available(options);
+    if (availability !== 'available') {
+      const canInstall = ['downloadable', 'downloading'].includes(availability)
+        && typeof Recognition.install === 'function';
+      if (!canInstall || !await Recognition.install(options)) {
+        voiceStatus.textContent = 'O ditado local em português de Portugal está indisponível.';
+        finish();
+        return;
+      }
+    }
+    const session = new Recognition();
+    recognition = session;
+    session.lang = 'pt-PT';
+    session.processLocally = true;
+    session.interimResults = true;
+    const originalDraft = input.value;
+    let final = false;
+    session.onstart = () => {
+      dictate.disabled = false;
+      dictate.textContent = 'Parar ditado';
+      voiceStatus.textContent = 'A ouvir…';
+    };
+    session.onresult = event => {
+      const result = event.results[0];
+      input.value = result[0].transcript.trim().slice(0, input.maxLength);
+      final = result.isFinal;
+      if (final) voiceStatus.textContent = 'Revê a transcrição antes de enviar.';
+    };
+    session.onerror = event => {
+      if (recognition !== session) return;
+      input.value = originalDraft;
+      voiceStatus.textContent = event.error === 'not-allowed'
+        ? 'Permite o acesso ao microfone para ditar.'
+        : 'Não foi possível transcrever. Podes escrever o pedido.';
+      finish();
+    };
+    session.onend = () => {
+      if (recognition !== session) return;
+      if (!final) {
+        input.value = originalDraft;
+        voiceStatus.textContent = 'Nenhum pedido foi reconhecido.';
+      }
+      finish();
+    };
+    session.start();
+  } catch {
+    voiceStatus.textContent = 'Não foi possível iniciar o ditado local.';
+    finish();
+  }
+});
 
 function bubble(role, content) {
   const item = document.createElement('p');
@@ -123,6 +246,8 @@ form.addEventListener('submit', async event => {
   event.preventDefault();
   const content = input.value.trim();
   if (!content || send.disabled) return;
+  interruptSpeech();
+  dictate.disabled = true;
   send.disabled = true;
   notice.textContent = '';
   input.value = '';
@@ -142,12 +267,21 @@ form.addEventListener('submit', async event => {
     const reply = await readReply(response, answer);
     history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
     status.textContent = 'Pronto';
+    if ('speechSynthesis' in window) {
+      const listen = document.createElement('button');
+      listen.type = 'button';
+      listen.textContent = 'Ouvir resposta';
+      listen.addEventListener('click', () => readAloud(reply));
+      answer.after(listen);
+      messages.scrollTop = messages.scrollHeight;
+    }
   } catch (error) {
     if (answer.textContent === 'A aguardar resposta…') answer.remove();
     notice.textContent = error.message || 'Não foi possível completar o pedido.';
     status.textContent = 'Pedido interrompido';
   } finally {
     delete document.body.dataset.busy;
+    dictate.disabled = false;
     send.disabled = false;
     input.focus();
   }
