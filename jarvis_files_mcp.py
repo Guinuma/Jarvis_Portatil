@@ -5,9 +5,33 @@ import sys
 from pathlib import Path
 
 
+
+LIST_FILES = {
+    "name": "listar_ficheiros",
+    "description": (
+        "Lista apenas nomes de ficheiros dentro da raiz autorizada. "
+        "Usa '.' para listar a raiz e um caminho relativo para uma subpasta."
+    ),
+    "inputSchema": {
+        "type": "object",
+        "properties": {"pasta": {"type": "string", "minLength": 1}},
+        "required": ["pasta"],
+        "additionalProperties": False,
+    },
+    "annotations": {"readOnlyHint": True, "openWorldHint": False},
+}
+
 def list_files(root, arguments):
+    if not isinstance(arguments, dict) or arguments.keys() != {"pasta"}:
+        return {"erro": "Indica apenas o argumento pasta."}
+    path = arguments["pasta"]
+    if not isinstance(path, str) or not path.strip():
+        return {"erro": "O argumento pasta tem de ser um caminho relativo."}
+    relative = Path(path)
+    if relative.anchor:
+        return {"erro": "O argumento pasta tem de ser um caminho relativo."}
     try:
-        folder = (root / arguments["pasta"]).resolve()
+        folder = (root / relative).resolve()
         folder.relative_to(root)
         names = sorted(
             entry.name for entry in folder.iterdir()
@@ -33,16 +57,8 @@ def respond(request, root):
     elif method == "ping":
         reply["result"] = {}
     elif method == "tools/list":
-        reply["result"] = {"tools": [{
-            "name": "listar_ficheiros",
-            "description": "Lista ficheiros de uma pasta autorizada. Usa . para a pasta principal.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {"pasta": {"type": "string"}},
-                "required": ["pasta"],
-            },
-        }]}
-    elif method == "tools/call" and params.get("name") == "listar_ficheiros":
+        reply["result"] = {"tools": [LIST_FILES]}
+    elif method == "tools/call" and params.get("name") == LIST_FILES["name"]:
         result = list_files(root, params.get("arguments", {}))
         reply["result"] = {
             "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],

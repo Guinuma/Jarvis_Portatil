@@ -28,10 +28,11 @@ Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na d
 
 ### Extensões e manutenção
 
-- [ ] Criar um registo de ferramentas com nome, finalidade, argumentos e permissões visíveis para cada ferramenta.
+- [x] Criar um registo de ferramentas com nome, finalidade, argumentos e permissões visíveis para cada ferramenta. A listagem publica o esquema e a indicação de leitura através de MCP.
 - [x] Ligar a ferramenta de listagem ao Hermes por MCP e confirmar, através da API local, que o agente a chama e usa o resultado.
 - [x] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta de listagem indisponível ou não executada. Validado com uma chamada real ao Hermes, um modelo inexistente e falhas de ligação e ausência do evento simuladas.
-- [ ] Criar testes de regressão com pedidos reais em PT-PT, incluindo a escolha da ferramenta, argumentos inválidos e falhas de execução.
+- [x] Criar testes automatizados do registo, da listagem autorizada, de argumentos inválidos e do acesso a pastas externas ou inexistentes.
+- [ ] Automatizar a regressão de ponta a ponta com pedidos em PT-PT ao Hermes, incluindo a escolha da ferramenta e a resposta a falhas de execução.
 
 ### Permissões e privacidade
 
