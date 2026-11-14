@@ -18,7 +18,7 @@ Ao concluir uma alteração, atualiza neste ficheiro os itens validados e regist
 
 - [ ] Criar um registo de ferramentas com nome, finalidade, argumentos e permissões visíveis para cada ferramenta.
 - [x] Ligar a ferramenta de listagem ao Hermes por MCP e confirmar, através da API local, que o agente a chama e usa o resultado.
-- [ ] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta indisponível.
+- [x] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta de listagem indisponível ou não executada. Validado com uma chamada real ao Hermes, um modelo inexistente e falhas de ligação e ausência do evento simuladas.
 - [ ] Criar testes de regressão com pedidos reais em PT-PT, incluindo a escolha da ferramenta, argumentos inválidos e falhas de execução.
 
 ### Permissões e privacidade
