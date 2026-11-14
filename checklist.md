@@ -97,6 +97,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 ### Programação
 
 - [ ] Abrir o projeto certo a partir de um nome reconhecido. Pedir a pasta ou a seleção quando houver vários projetos com o mesmo nome.
+- [ ] Abrir a pasta do projeto selecionado no VS Code com o comando `code`. Verificar que o editor abre a pasta certa e que o JARVIS apresenta uma mensagem útil se o comando estiver indisponível.
 
 ### Pesquisa pessoal
 
@@ -330,7 +331,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [ ] Pesquisar código no projeto autorizado e devolver os ficheiros e linhas relevantes.
 - [ ] Explicar um erro usando a mensagem e o trecho de código relacionados.
-- [ ] Criar as alterações pedidas e mostrar os ficheiros alterados.
+- [ ] Preparar uma proposta de alteração para os ficheiros autorizados e mostrar as diferenças para revisão.
+- [ ] Aplicar a proposta após aprovação e mostrar os ficheiros alterados. Se um ficheiro tiver mudado desde a revisão, pedir nova revisão antes de aplicar.
 - [ ] Correr os testes relevantes e apresentar os resultados, incluindo eventuais falhas.
 - [ ] Consultar o estado, o histórico ou o ramo do Git conforme o pedido.
 - [ ] Resumir um diff e indicar as alterações principais e os ficheiros afetados.
@@ -404,6 +406,11 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Aprovar um envio de teste, simular uma falha na resposta do serviço e confirmar que o JARVIS verifica o envio antes de repetir a ação. Verificar que existe uma única mensagem enviada.
 
 ## Fase 5 — Versão avançada
+
+### Programação
+
+- [ ] Criar uma extensão opcional do VS Code com um comando para enviar a seleção ou o ficheiro ativo ao JARVIS. Mostrar que conteúdo será enviado.
+- [ ] Mostrar a proposta do JARVIS como uma comparação dentro do VS Code e permitir aprová-la ou descartá-la. Depende da geração e aplicação de propostas da Fase 4.
 
 ### Voz
 
