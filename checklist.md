@@ -1,27 +1,30 @@
 # JARVIS Portátil — Checklist de desenvolvimento
 
+Ao concluir uma alteração, atualiza neste ficheiro os itens validados e regista os testes que ainda faltam. Marca uma tarefa quando todos os resultados nela descritos estiverem confirmados.
+
 ## Fase 1 — Base técnica
 
 ### Funcionamento local e desempenho
 
-- [ ] Instalar o Ollama e confirmar que responde a um pedido de teste no portátil.
-- [ ] Configurar o Hermes Agent para usar o Ollama como fornecedor local e confirmar que um pedido feito na aplicação JARVIS chega ao modelo através do agente.
+- [x] Instalar o Ollama e confirmar que responde a um pedido de teste no portátil.
+- [x] Configurar o Hermes Agent para usar o Ollama como fornecedor local e confirmar que um pedido feito na aplicação JARVIS chega ao modelo através do agente.
+- [x] Configurar o modelo inicial `qwen3:8b` e confirmar uma chamada real à ferramenta de listagem.
 - [ ] Escolher e configurar um modelo com suporte a chamadas de ferramentas. Incluir o **Hermes 3** como opção e comparar os candidatos no mesmo portátil quanto à compreensão de português de Portugal, à escolha da ferramenta e ao tempo de resposta.
-- [ ] Confirmar que o modelo devolve o nome da ferramenta e argumentos válidos, e que o Hermes Agent usa o resultado da execução para responder.
+- [x] Confirmar que o modelo devolve o nome da ferramenta e argumentos válidos, e que o Hermes Agent usa o resultado da execução para responder.
 - [ ] Testar pedidos em português de Portugal com datas, horas e expressões como «daqui a 45 minutos» e «a reunião de amanhã».
 - [ ] Medir o tempo até ao início da resposta, o consumo de memória e a taxa de sucesso das chamadas de ferramentas num conjunto fixo de pedidos.
 
 ### Extensões e manutenção
 
 - [ ] Criar um registo de ferramentas com nome, finalidade, argumentos e permissões visíveis para cada ferramenta.
-- [ ] Ligar uma ferramenta de teste por API e confirmar que o agente consegue chamá-la e interpretar o resultado.
+- [x] Ligar a ferramenta de listagem ao Hermes por MCP e confirmar, através da API local, que o agente a chama e usa o resultado.
 - [ ] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta indisponível.
 - [ ] Criar testes de regressão com pedidos reais em PT-PT, incluindo a escolha da ferramenta, argumentos inválidos e falhas de execução.
 
 ### Permissões e privacidade
 
 - [ ] Aplicar permissões por ferramenta e utilizador antes de executar uma chamada. Testar que uma chamada recusada não produz efeitos.
-- [ ] Restringir ferramentas de ficheiros às pastas autorizadas. Testar um caminho fora dessas pastas.
+- [x] Restringir ferramentas de ficheiros às pastas autorizadas. Testar um caminho fora dessas pastas.
 - [ ] Guardar credenciais fora das conversas e verificar que ficam ausentes do histórico apresentado ao utilizador.
 - [ ] Registar o que o JARVIS executou, porquê e com que resultado, incluindo pedidos recusados e falhas.
 - [ ] Tratar instruções encontradas em sites, emails e PDFs como conteúdo externo. Testar que um documento que manda enviar dados não desencadeia um envio.
@@ -30,9 +33,10 @@
 
 > «Que ficheiros tenho na pasta de teste?»
 
-- [ ] Confirmar que o Hermes Agent usa o modelo configurado no Ollama e escolhe a ferramenta de listagem com a pasta certa.
-- [ ] Confirmar que o JARVIS apresenta os ficheiros reais numa resposta em português de Portugal.
+- [x] Confirmar que o Hermes Agent usa o modelo configurado no Ollama e escolhe a ferramenta de listagem com a pasta certa.
+- [x] Confirmar que o JARVIS apresenta os ficheiros reais numa resposta em português de Portugal.
 - [ ] Retirar a permissão à pasta e repetir o pedido. Confirmar que a leitura é recusada e que a recusa fica registada.
+- [x] Pedir a listagem de uma pasta fora da raiz autorizada e confirmar a recusa na resposta e nos registos do Hermes.
 - [ ] Desligar o Ollama e repetir o pedido. Confirmar que o diagnóstico identifica a falha e que o JARVIS comunica o erro.
 
 ## Fase 2 — MVP
@@ -40,6 +44,9 @@
 ### Voz
 
 - [ ] Abrir a escuta por tecla de atalho e confirmar que o microfone muda para o estado ativo.
+- [x] Implementar o botão **Ditar** para iniciar e parar a transcrição local em PT-PT e rever o texto antes de enviar. Validado no Chromium com reconhecimento simulado.
+- [x] Disponibilizar **Ouvir resposta**, dar preferência a uma voz local PT-PT e expor **Parar leitura** durante a reprodução. Validado com síntese simulada.
+- [ ] Confirmar a leitura em voz alta com uma voz portuguesa instalada e a saída de áudio do portátil.
 - [ ] Abrir a escuta por botão e confirmar que o utilizador consegue terminá-la pelo mesmo painel.
 - [ ] Transcrever pedidos com o microfone do portátil em português de Portugal.
 - [ ] Executar comandos por voz a partir da transcrição. Depende da transcrição e das ferramentas registadas.
@@ -95,7 +102,10 @@
 
 ### Painel e acessibilidade
 
-- [ ] Apresentar um chat com entrada por texto e respostas legíveis.
+- [x] Apresentar um chat com entrada por texto e respostas legíveis.
+- [x] Abrir o Jarvis normal no navegador com o atalho do Windows.
+- [x] Apresentar o início e a conclusão de uma chamada real de ferramenta no painel de atividade do Hermes.
+- [x] Abrir o painel H.O.L.O Hands a partir do Jarvis normal quando o submódulo está instalado.
 - [ ] Mostrar o estado do microfone enquanto está ativo, inativo ou indisponível.
 - [ ] Mostrar a transcrição em direto durante a escuta.
 - [ ] Mostrar legendas sincronizadas com as respostas faladas.
