@@ -12,6 +12,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from .integrations.editor import is_open_project_request, open_project
+
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
 OLLAMA_VERSION_URL = "http://127.0.0.1:11434/api/version"
@@ -100,6 +102,15 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError
         except (KeyError, TypeError, ValueError):
             return self.send_content(400, {"error": "O pedido de conversa está vazio ou é demasiado grande."})
+        if is_open_project_request(messages[-1]["content"]):
+            try:
+                open_project(ROOT)
+            except FileNotFoundError as error:
+                return self.send_content(503, {"error": str(error)})
+            except OSError:
+                return self.send_content(503, {"error": "Não consegui abrir o VS Code."})
+            return self.send_content(200, {"reply": "Pedi ao VS Code para abrir o projeto JARVIS Portátil."})
+
         if not self.key:
             return self.send_content(503, {"error": "Configura a chave da API local do Hermes e reinicia o JARVIS."})
 

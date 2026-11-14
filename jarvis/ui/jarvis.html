@@ -335,7 +335,13 @@ form.addEventListener('submit', async event => {
       body: JSON.stringify({messages: [...history.slice(-8), user]}),
     });
     if (!response.ok) throw new Error((await response.json()).error);
-    const reply = await readReply(response, answer, speech);
+    const local = response.headers.get('Content-Type')?.startsWith('application/json');
+    const reply = local ? (await response.json()).reply : await readReply(response, answer, speech);
+    if (local) {
+      answer.textContent = reply;
+      activity.firstElementChild.textContent = 'Pedido local · abrir VS Code';
+      readStreamedText(speech, reply, true);
+    }
     history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
     status.textContent = 'Pronto';
     if ('speechSynthesis' in window) {

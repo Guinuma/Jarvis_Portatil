@@ -97,7 +97,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 ### Programação
 
 - [ ] Abrir o projeto certo a partir de um nome reconhecido. Pedir a pasta ou a seleção quando houver vários projetos com o mesmo nome.
-- [ ] Abrir a pasta do projeto selecionado no VS Code com o comando `code`. Verificar que o editor abre a pasta certa e que o JARVIS apresenta uma mensagem útil se o comando estiver indisponível.
+- [x] Abrir o JARVIS Portátil no VS Code com «Jarvis, abre o meu projeto no VS Code». Confirmar a pasta no editor e testar a mensagem de erro quando o VS Code está indisponível.
+- [ ] Abrir no VS Code outros projetos autorizados depois de resolver o nome ou a seleção do utilizador.
 
 ### Pesquisa pessoal
 

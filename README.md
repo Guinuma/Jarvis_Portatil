@@ -21,6 +21,8 @@ No Windows, abre **Iniciar Jarvis Normal.cmd** (ou executa `python -m jarvis.app
 
 Carrega em **Ditar** ou prime **Alt+Shift+D** com a janela do JARVIS em foco para iniciar ou parar o ditado. Podes usar o reconhecimento local em português de Portugal, se o navegador tiver suporte e o pacote de idioma estiver disponível. Revê a transcrição antes de carregar em **Enviar**. Para ouvir uma resposta, carrega em **Ouvir resposta**. A leitura usa uma voz portuguesa instalada no Windows e pode ser interrompida em **Parar leitura**. Ativa **Ler respostas automaticamente** para ouvir as frases à medida que chegam. A leitura automática começa desativada. Usa **Voz** para escolher uma voz local em português e **Velocidade** para ajustar o ritmo de leitura. A opção **Automática** dá preferência a português de Portugal.
 
+Para abrir este repositório no editor, escreve «Jarvis, abre o meu projeto no VS Code». O JARVIS procura o VS Code pelo executável ou pelo atalho `code` do Windows.
+
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
 
 ## Verificar a base local
