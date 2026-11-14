@@ -21,7 +21,7 @@ body[data-busy] .reactor::before{animation-duration:6s} @keyframes rotate{to{tra
 #messages{height:clamp(205px,33vh,400px);overflow:auto;margin:12px 0;display:flex;flex-direction:column;gap:10px}
 .bubble{margin:0;max-width:92%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel)}
 .bubble.user{align-self:flex-end;background:#10364b}.bubble.assistant{align-self:flex-start}
-form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);background:#050f1a;border:1px solid var(--line);border-radius:8px;padding:10px}.submit{color:#001621;background:var(--cyan);font-weight:700}
+form{display:flex;gap:8px}#prompt{width:100%;min-width:0;color:var(--text);background:#050f1a;border:1px solid var(--line);border-radius:8px;padding:10px}.submit{color:#001621;background:var(--cyan);font-weight:700}
 .voice-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;color:var(--muted)}
 #activity{padding-left:19px;color:var(--muted);overflow-wrap:anywhere}li{margin:0 0 .6em}#notice{margin:10px 0 0;color:#ffb890}#notice:empty{display:none}
 @media(max-width:640px){main{grid-template-columns:1fr;padding:18px 12px}.reactor{width:126px}header{padding:12px}.panel{padding:12px}}
@@ -43,6 +43,7 @@ form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);backgro
     <div class="voice-controls">
       <button type="button" id="dictate" aria-keyshortcuts="Alt+Shift+D" title="Alt+Shift+D">Ditar</button>
       <button type="button" id="stop-speech" hidden>Parar leitura</button>
+      <label><input type="checkbox" id="auto-read"> Ler respostas automaticamente</label>
       <span id="voice-status" role="status"></span>
     </div>
     <p id="notice" role="alert"></p>
@@ -69,19 +70,26 @@ const stopSpeech = document.querySelector('#stop-speech');
 const voiceStatus = document.querySelector('#voice-status');
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
-let utterance;
+const autoRead = document.querySelector('#auto-read');
+let speaking = new Set();
+let streamedSpeech;
 
 function interruptSpeech() {
-  if (!utterance) return;
-  utterance = undefined;
+  streamedSpeech = undefined;
+  if (!speaking.size) return;
+  speaking.clear();
   window.speechSynthesis.cancel();
   stopSpeech.hidden = true;
   voiceStatus.textContent = 'Leitura interrompida.';
 }
-stopSpeech.addEventListener('click', interruptSpeech);
 
-function readAloud(text) {
-  interruptSpeech();
+stopSpeech.addEventListener('click', interruptSpeech);
+autoRead.addEventListener('change', () => {
+  if (!autoRead.checked) interruptSpeech();
+});
+autoRead.disabled = !('speechSynthesis' in window);
+
+function queueSpeech(text) {
   const voices = window.speechSynthesis.getVoices().filter(
     voice => voice.localService && /^pt(?:[-_]|$)/i.test(voice.lang)
   );
@@ -93,18 +101,36 @@ function readAloud(text) {
   const speech = new SpeechSynthesisUtterance(text);
   speech.voice = voice;
   speech.lang = voice.lang;
-  utterance = speech;
+  speaking.add(speech);
   stopSpeech.hidden = false;
   voiceStatus.textContent = 'A ler a resposta…';
   function finish(message) {
-    if (utterance !== speech) return;
-    utterance = undefined;
+    if (!speaking.delete(speech) || speaking.size) return;
     stopSpeech.hidden = true;
     voiceStatus.textContent = message;
   }
   speech.onend = () => finish('Leitura concluída.');
   speech.onerror = () => finish('Não foi possível reproduzir o áudio.');
   window.speechSynthesis.speak(speech);
+}
+
+function readAloud(text) {
+  interruptSpeech();
+  queueSpeech(text);
+}
+
+function readStreamedText(session, text, complete = false) {
+  if (!session || session !== streamedSpeech) return;
+  session.pending += text;
+  const parts = session.pending.split(/(?<=[.!?…])\s+/);
+  session.pending = parts.pop();
+  if (complete) {
+    parts.push(session.pending);
+    streamedSpeech = undefined;
+  }
+  for (const part of parts) {
+    if (part.trim()) queueSpeech(part.trim());
+  }
 }
 
 document.addEventListener('keydown', event => {
@@ -209,7 +235,7 @@ function toolUpdate(data, rows) {
   row.textContent = label + (data.status === 'running' ? ' · em execução' : ' · concluída');
 }
 
-async function readReply(response, answer) {
+async function readReply(response, answer, speech) {
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   const rows = new Map();
   let pending = '';
@@ -235,7 +261,9 @@ async function readReply(response, answer) {
         if (lines.includes('event: hermes.tool.progress')) {
           toolUpdate(data, rows);
         } else if (data.choices?.[0]?.delta?.content) {
-          text += data.choices[0].delta.content;
+          const delta = data.choices[0].delta.content;
+          text += delta;
+          readStreamedText(speech, delta);
           answer.textContent = text.trimStart();
           messages.scrollTop = messages.scrollHeight;
         }
@@ -243,6 +271,7 @@ async function readReply(response, answer) {
     }
     if (!text.trim() || !complete) throw new Error('A resposta do Hermes ficou incompleta.');
     if (!rows.size) activity.firstElementChild.textContent = 'Nenhuma chamada de ferramenta recebida.';
+    readStreamedText(speech, "", true);
     return text;
   } finally {
     await reader.cancel().catch(() => {});
@@ -264,6 +293,8 @@ form.addEventListener('submit', async event => {
   activity.firstElementChild.textContent = 'Pedido enviado ao Hermes.';
   const user = {role: 'user', content};
   bubble(user.role, content);
+  const speech = autoRead.checked ? {pending: ""} : undefined;
+  streamedSpeech = speech;
   const answer = bubble('assistant', 'A aguardar resposta…');
   try {
     const response = await fetch('/chat', {
@@ -271,7 +302,7 @@ form.addEventListener('submit', async event => {
       body: JSON.stringify({messages: [...history.slice(-8), user]}),
     });
     if (!response.ok) throw new Error((await response.json()).error);
-    const reply = await readReply(response, answer);
+    const reply = await readReply(response, answer, speech);
     history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
     status.textContent = 'Pronto';
     if ('speechSynthesis' in window) {
@@ -283,6 +314,7 @@ form.addEventListener('submit', async event => {
       messages.scrollTop = messages.scrollHeight;
     }
   } catch (error) {
+    if (speech && speech === streamedSpeech) interruptSpeech();
     if (answer.textContent === 'A aguardar resposta…') answer.remove();
     notice.textContent = error.message || 'Não foi possível completar o pedido.';
     status.textContent = 'Pedido interrompido';

@@ -67,7 +67,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Abrir a escuta por botão e confirmar que o utilizador consegue terminá-la pelo mesmo painel.
 - [ ] Transcrever pedidos com o microfone do portátil em português de Portugal.
 - [ ] Executar comandos por voz a partir da transcrição. Depende da transcrição e das ferramentas registadas.
-- [ ] Começar a ler a resposta enquanto o modelo ainda a está a gerar.
+- [x] Enfileirar frases para leitura automática à medida que o Hermes envia a resposta. Validado com síntese simulada.
+- [x] Cancelar a fila de leitura e bloquear a leitura das frases seguintes da resposta em curso. Validado com síntese simulada.
 - [ ] Interromper a voz a meio de uma frase e confirmar que o áudio para imediatamente, incluindo o que já estava em fila.
 - [ ] Reconhecer «cancela» durante uma operação e confirmar que o pedido pendente é cancelado. Depende da transcrição e do cancelamento da operação.
 - [ ] Corrigir um pedido com uma instrução como «afinal, daqui a 30 minutos» sem reiniciar a conversa. Confirmar que fica apenas o lembrete corrigido. Depende do contexto e da edição de lembretes.
@@ -75,7 +76,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Alterar a velocidade da leitura e confirmar a mudança na resposta seguinte.
 - [ ] Escolher o microfone e verificar que o áudio é captado pelo dispositivo selecionado.
 - [ ] Escolher a saída de áudio e verificar que a resposta é reproduzida no dispositivo selecionado.
-- [ ] Ativar o modo silencioso e receber a resposta por texto.
+- [x] Desativar **Ler respostas automaticamente** e receber a resposta por texto.
 
 ### Conversa
 

@@ -19,7 +19,7 @@ Os dois atalhos Windows estão na raiz. O ficheiro `jarvis_files_mcp.py` na raiz
 
 No Windows, abre **Iniciar Jarvis Normal.cmd** (ou executa `python -m jarvis.app --open`). O chat abre no navegador em `http://127.0.0.1:4889`. Com o gateway do Hermes local a correr, escreve «Que ficheiros tenho na pasta autorizada?». A atividade mostra as chamadas de ferramentas emitidas pelo Hermes durante o pedido.
 
-Carrega em **Ditar** ou prime **Alt+Shift+D** com a janela do JARVIS em foco para iniciar ou parar o ditado. Podes usar o reconhecimento local em português de Portugal, se o navegador tiver suporte e o pacote de idioma estiver disponível. Revê a transcrição antes de carregar em **Enviar**. Para ouvir uma resposta, carrega em **Ouvir resposta**. A leitura usa uma voz portuguesa instalada no Windows e pode ser interrompida em **Parar leitura**.
+Carrega em **Ditar** ou prime **Alt+Shift+D** com a janela do JARVIS em foco para iniciar ou parar o ditado. Podes usar o reconhecimento local em português de Portugal, se o navegador tiver suporte e o pacote de idioma estiver disponível. Revê a transcrição antes de carregar em **Enviar**. Para ouvir uma resposta, carrega em **Ouvir resposta**. A leitura usa uma voz portuguesa instalada no Windows e pode ser interrompida em **Parar leitura**. Ativa **Ler respostas automaticamente** para ouvir as frases à medida que chegam. A leitura automática começa desativada.
 
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
 
