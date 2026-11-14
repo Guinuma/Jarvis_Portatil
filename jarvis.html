@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-PT">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JARVIS Portátil</title>
+<style>
+:root{color-scheme:dark;--bg:#050e18;--panel:#0b1b29;--line:#204359;--text:#e2f5ff;--muted:#a1bacb;--cyan:#79e7ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 24%,#102f45,var(--bg) 63%);color:var(--text);font:15px/1.5 "Segoe UI",sans-serif;min-height:100vh}
+button,input{font:inherit}button{cursor:pointer;border:1px solid var(--line);border-radius:8px;background:#112a3c;color:var(--text);padding:.65rem 1rem}button:hover:not(:disabled){border-color:var(--cyan)}button:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px clamp(16px,5vw,64px);border-bottom:1px solid var(--line);background:#071321}
+h1{font-size:17px;letter-spacing:.25em;margin:0}h2{font-size:12px;letter-spacing:.15em;text-transform:uppercase;margin:0;color:var(--muted)}
+main{max-width:1080px;margin:auto;padding:28px 20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,260px);gap:16px}
+.hero{grid-column:1/-1;text-align:center;padding:12px 0 18px}
+.reactor{width:176px;aspect-ratio:1;margin:0 auto 20px;border-radius:50%;border:1px solid #3a9bb8;position:relative;background:radial-gradient(circle,#91eaff 0%,#197591 11%,#0b2d40 27%,#19435b 28%,#081c2b 30%);box-shadow:0 0 45px #4bc9f331,inset 0 0 27px #4bc9f346}
+.reactor::before,.reactor::after{content:"";position:absolute;border-radius:50%;inset:9px;border:7px dashed #6de2f9;filter:drop-shadow(0 0 6px #4bd8ff);animation:rotate 27s linear infinite}
+.reactor::after{inset:29px;border:3px solid #25738e;border-top-color:var(--cyan);border-bottom-color:var(--cyan);animation:rotate 17s linear infinite reverse}
+body[data-busy] .reactor::before{animation-duration:6s} @keyframes rotate{to{transform:rotate(360deg)}}
+#status{color:var(--cyan);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.panel{min-width:0;border:1px solid var(--line);border-radius:12px;background:#081725df;padding:16px}
+#messages{height:clamp(205px,33vh,400px);overflow:auto;margin:12px 0;display:flex;flex-direction:column;gap:10px}
+.bubble{margin:0;max-width:92%;border:1px solid var(--line);border-radius:10px;padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--panel)}
+.bubble.user{align-self:flex-end;background:#10364b}.bubble.assistant{align-self:flex-start}
+form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);background:#050f1a;border:1px solid var(--line);border-radius:8px;padding:10px}.submit{color:#001621;background:var(--cyan);font-weight:700}
+#activity{padding-left:19px;color:var(--muted);overflow-wrap:anywhere}li{margin:0 0 .6em}#notice{margin:10px 0 0;color:#ffb890}#notice:empty{display:none}
+@media(max-width:640px){main{grid-template-columns:1fr;padding:18px 12px}.reactor{width:126px}header{padding:12px}.panel{padding:12px}}
+@media(prefers-reduced-motion:reduce){.reactor::before,.reactor::after{animation:none}}
+</style>
+<header><h1>JARVIS</h1><button type="button" id="holo">H.O.L.O Hands</button></header>
+<main>
+  <section class="hero" aria-label="Estado do assistente">
+    <div class="reactor" aria-hidden="true"></div>
+    <div id="status" role="status">Pronto</div>
+  </section>
+  <section class="panel" aria-labelledby="chat-heading">
+    <h2 id="chat-heading">Conversa</h2>
+    <div id="messages" role="log" aria-label="Mensagens"></div>
+    <form>
+      <input id="prompt" aria-label="Mensagem" placeholder="Escreve um pedido…" maxlength="8000" required>
+      <button class="submit" type="submit">Enviar</button>
+    </form>
+    <p id="notice" role="alert"></p>
+  </section>
+  <aside class="panel" aria-labelledby="activity-heading">
+    <h2 id="activity-heading">Atividade do Hermes</h2>
+    <ul id="activity"><li>À espera de um pedido.</li></ul>
+  </aside>
+</main>
+<script>
+const form = document.querySelector('form');
+const input = document.querySelector('#prompt');
+const send = form.querySelector('button');
+const messages = document.querySelector('#messages');
+const activity = document.querySelector('#activity');
+const status = document.querySelector('#status');
+const notice = document.querySelector('#notice');
+const holo = document.querySelector('#holo');
+const history = [];
+const headers = {'Content-Type': 'application/json'};
+
+function bubble(role, content) {
+  const item = document.createElement('p');
+  item.className = 'bubble ' + role;
+  item.textContent = content;
+  messages.append(item);
+  messages.scrollTop = messages.scrollHeight;
+  return item;
+}
+
+function toolUpdate(data, rows) {
+  let row = rows.get(data.toolCallId);
+  if (!row) {
+    if (!rows.size) activity.replaceChildren();
+    row = document.createElement('li');
+    rows.set(data.toolCallId, row);
+    activity.append(row);
+  }
+  const label = data.tool === 'mcp__jarvis_files__listar_ficheiros' ? 'Listar ficheiros' : data.tool;
+  row.textContent = label + (data.status === 'running' ? ' · em execução' : ' · concluída');
+}
+
+async function readReply(response, answer) {
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  const rows = new Map();
+  let pending = '';
+  let complete = false;
+  let text = '';
+  try {
+    while (!complete) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      pending += chunk.value;
+      const frames = pending.split(/\r?\n\r?\n/);
+      pending = frames.pop();
+      for (const frame of frames) {
+        const lines = frame.split(/\r?\n/);
+        const raw = lines.filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n');
+        if (!raw) continue;
+        if (raw === '[DONE]') {
+          complete = true;
+          break;
+        }
+        const data = JSON.parse(raw);
+        if (data.error) throw new Error('O Hermes devolveu um erro durante o pedido.');
+        if (lines.includes('event: hermes.tool.progress')) {
+          toolUpdate(data, rows);
+        } else if (data.choices?.[0]?.delta?.content) {
+          text += data.choices[0].delta.content;
+          answer.textContent = text.trimStart();
+          messages.scrollTop = messages.scrollHeight;
+        }
+      }
+    }
+    if (!text.trim() || !complete) throw new Error('A resposta do Hermes ficou incompleta.');
+    if (!rows.size) activity.firstElementChild.textContent = 'Nenhuma chamada de ferramenta recebida.';
+    return text;
+  } finally {
+    await reader.cancel().catch(() => {});
+  }
+}
+
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const content = input.value.trim();
+  if (!content || send.disabled) return;
+  send.disabled = true;
+  notice.textContent = '';
+  input.value = '';
+  status.textContent = 'A processar';
+  document.body.dataset.busy = '';
+  activity.replaceChildren(document.createElement('li'));
+  activity.firstElementChild.textContent = 'Pedido enviado ao Hermes.';
+  const user = {role: 'user', content};
+  bubble(user.role, content);
+  const answer = bubble('assistant', 'A aguardar resposta…');
+  try {
+    const response = await fetch('/chat', {
+      method: 'POST', headers,
+      body: JSON.stringify({messages: [...history.slice(-8), user]}),
+    });
+    if (!response.ok) throw new Error((await response.json()).error);
+    const reply = await readReply(response, answer);
+    history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
+    status.textContent = 'Pronto';
+  } catch (error) {
+    if (answer.textContent === 'A aguardar resposta…') answer.remove();
+    notice.textContent = error.message || 'Não foi possível completar o pedido.';
+    status.textContent = 'Pedido interrompido';
+  } finally {
+    delete document.body.dataset.busy;
+    send.disabled = false;
+    input.focus();
+  }
+});
+
+holo.addEventListener('click', async () => {
+  holo.disabled = true;
+  notice.textContent = '';
+  try {
+    const response = await fetch('/holo', {method: 'POST', headers, body: '{}'});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error);
+    window.location.assign(data.url);
+  } catch (error) {
+    notice.textContent = error.message;
+  } finally {
+    holo.disabled = false;
+  }
+});
+</script>
+</html>

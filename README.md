@@ -4,6 +4,12 @@ Assistente de voz local no Windows com uma interface controlada por gestos da we
 
 Vê o [checklist de desenvolvimento](checklist.md) para acompanhar as cinco fases do projeto.
 
+## Abrir a aplicação JARVIS
+
+No Windows, abre **Iniciar Jarvis Normal.cmd** (ou executa `python jarvis_app.py --open`). O chat abre no navegador em `http://127.0.0.1:4889`. Com o gateway do Hermes local a correr, escreve «Que ficheiros tenho na pasta autorizada?». A atividade mostra as chamadas de ferramentas emitidas pelo Hermes durante o pedido.
+
+O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
+
 ## Verificar a base local
 
 Com o Ollama aberto, corre `python check_local.py --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.
