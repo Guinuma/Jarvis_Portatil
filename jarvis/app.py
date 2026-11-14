@@ -18,7 +18,9 @@ from urllib.request import Request, urlopen
 from .integrations.editor import normalize, open_project, project_request, resolve_project
 
 from .integrations.notes import latest_notes, notes_request
+from .integrations.project_files import file_command
 from .integrations.reminders import COMBINED, parse_reminder
+from .integrations.windows import windows_command
 
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
@@ -121,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError as error:
             return self.send_content(400, {"error": str(error)})
         if reminder:
-            label, seconds = reminder
+            label, due = reminder
             results = []
             if combined:
                 try:
@@ -138,8 +140,7 @@ class Handler(BaseHTTPRequestHandler):
                         results.append("Não encontrei notas de sessão no projeto.")
                 except (OSError, ValueError, RuntimeError):
                     results.append("Não consegui consultar a pasta de notas.")
-            due = time.time() + seconds
-            results.append(f"Lembrete às {time.strftime('%H:%M:%S', time.localtime(due))}: {label}")
+            results.append(f"Lembrete às {time.strftime('%d/%m %H:%M:%S', time.localtime(due))}: {label}")
             return self.send_content(200, {
                 "reply": "\n".join(results), "reminder": {"label": label, "due": due},
             })
@@ -178,6 +179,21 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_content(503, {"error": "Não consegui abrir o VS Code."})
             return self.send_content(200, {"reply": f"Pedi ao VS Code para abrir o projeto {name}."})
 
+
+        try:
+            file_reply = file_command(text, ROOT)
+        except (OSError, ValueError, RuntimeError) as error:
+            return self.send_content(400, {"error": f"Ficheiro indisponível: {error}"})
+        if file_reply is not None:
+            return self.send_content(200, {"reply": file_reply})
+
+        if sys.platform == "win32":
+            try:
+                windows_reply = windows_command(text)
+            except (OSError, ValueError) as error:
+                return self.send_content(400, {"error": str(error)})
+            if windows_reply is not None:
+                return self.send_content(200, {"reply": windows_reply})
 
         if not self.key:
             return self.send_content(503, {"error": "Configura a chave da API local do Hermes e reinicia o JARVIS."})

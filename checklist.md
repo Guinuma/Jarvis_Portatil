@@ -91,9 +91,9 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Windows e aplicações
 
-- [ ] Abrir uma aplicação instalada a partir do seu nome.
-- [ ] Abrir um ficheiro pelo caminho encontrado ou selecionado.
-- [ ] Abrir um site no navegador predefinido.
+- [x] Abrir aplicações Windows suportadas pelo nome. Validado com lançamento simulado.
+- [x] Enviar um ficheiro de texto pelo caminho selecionado ao VS Code. Validado com lançamento simulado.
+- [x] Encaminhar um endereço HTTP ou HTTPS para o navegador predefinido. Validado com abertura simulada.
 - [ ] Alterar o volume do Windows e verificar o nível resultante.
 - [ ] Mudar o dispositivo de áudio predefinido do Windows e verificar a seleção no sistema.
 
@@ -105,24 +105,25 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Pesquisa pessoal
 
-- [ ] Encontrar ficheiros pelo nome nas pastas autorizadas e apresentar ligações para os abrir.
-- [ ] Encontrar ficheiros pelo conteúdo nas pastas autorizadas.
+- [x] Encontrar ficheiros pelo nome no projeto JARVIS e apresentar pedidos para os abrir.
+- [x] Encontrar ficheiros de texto pelo conteúdo no projeto JARVIS.
+- [ ] Estender a pesquisa por nome e conteúdo aos restantes projetos autorizados.
 - [x] Encontrar as notas da última sessão de um projeto autorizado em `notes/AAAA-MM-DD/`, mostrando os ficheiros e a origem da data. Validado no chat com pastas de teste.
 
 ### Ficheiros e documentos
 
-- [ ] Criar um ficheiro numa pasta autorizada e devolver a sua localização.
-- [ ] Guardar uma nota ditada ou escrita e confirmar que pode ser reaberta com o conteúdo pedido.
+- [x] Criar um ficheiro no projeto JARVIS sem sobrescrever e devolver a sua localização.
+- [x] Guardar uma nota enviada pelo chat e confirmar que o ficheiro contém o texto pedido.
 
 ### Agenda e tarefas
 
 - [ ] Consultar a agenda ligada e devolver os compromissos do dia solicitado.
 - [ ] Consultar a disponibilidade num intervalo e apresentar os períodos livres.
-- [ ] Criar um temporizador e confirmar que o aviso dispara ao fim do intervalo indicado.
+- [x] Criar um temporizador e confirmar o disparo com um intervalo de teste no Chromium.
 - [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta. Validado no Chromium com um intervalo de teste.
-- [ ] Criar um lembrete para uma hora absoluta.
-- [ ] Editar um lembrete e confirmar que dispara apenas na nova hora.
-- [ ] Cancelar um lembrete e confirmar que a notificação deixa de estar agendada.
+- [x] Calcular a próxima ocorrência de uma hora absoluta para agendar um aviso.
+- [x] Editar o último lembrete pendente e confirmar em teste que só o aviso corrigido dispara.
+- [x] Cancelar o último lembrete pendente e confirmar em teste que o aviso não dispara.
 
 ### Painel e acessibilidade
 
@@ -130,10 +131,10 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [x] Abrir o Jarvis normal no navegador com o atalho do Windows.
 - [x] Apresentar o início e a conclusão de uma chamada real de ferramenta no painel de atividade do Hermes.
 - [x] Abrir o painel H.O.L.O Hands a partir do Jarvis normal quando o submódulo está instalado.
-- [ ] Mostrar o estado do microfone enquanto está ativo, inativo ou indisponível.
-- [ ] Mostrar a transcrição em direto durante a escuta.
-- [ ] Mostrar legendas sincronizadas com as respostas faladas.
-- [ ] Mostrar um botão **Parar** visível durante a execução e confirmar que interrompe uma tarefa cancelável.
+- [x] Mostrar os estados do microfone no painel. Validado com reconhecimento simulado.
+- [x] Mostrar a transcrição parcial durante a escuta. Validado com reconhecimento simulado.
+- [x] Mostrar legendas ao início de cada trecho lido e ocultá-las no fim. Validado com síntese simulada.
+- [x] Mostrar **Cancelar pedido** durante a execução e confirmar que fecha o fluxo de resposta em teste.
 - [ ] Permitir usar o chat, a escuta e o botão **Parar** por teclado.
 - [ ] Verificar a ordem do foco, os rótulos dos controlos, o contraste e a leitura dos estados com tecnologias de apoio.
 

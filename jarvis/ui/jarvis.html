@@ -53,8 +53,10 @@ form{display:flex;gap:8px}#prompt{width:100%;min-width:0;color:var(--text);backg
       <button type="button" id="cancel-request" hidden>Cancelar pedido</button>
       <label>Microfone <select id="microphone"><option value="">Predefinido</option></select></label>
       <button type="button" id="audio-settings">Saída de áudio do Windows</button>
+      <span id="microphone-status" role="status">Microfone inativo</span>
       <span id="voice-status" role="status"></span>
     </div>
+    <p id="speech-caption" hidden></p>
     <div id="reminders" role="log" aria-label="Avisos de lembretes"></div>
     <p id="notice" role="alert"></p>
   </section>
@@ -80,6 +82,8 @@ const stopSpeech = document.querySelector('#stop-speech');
 const voiceStatus = document.querySelector('#voice-status');
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const microphone = document.querySelector('#microphone');
+const microphoneStatus = document.querySelector('#microphone-status');
+const speechCaption = document.querySelector('#speech-caption');
 const cancelRequest = document.querySelector('#cancel-request');
 let recognition;
 let requestController;
@@ -135,6 +139,7 @@ function interruptSpeech() {
   streamedSpeech = undefined;
   if (!speaking.size) return;
   speaking.clear();
+  speechCaption.hidden = true;
   window.speechSynthesis.cancel();
   stopSpeech.hidden = true;
   voiceStatus.textContent = 'Leitura interrompida.';
@@ -186,10 +191,17 @@ function queueSpeech(text) {
   stopSpeech.hidden = false;
   voiceStatus.textContent = 'A ler a resposta…';
   function finish(message) {
-    if (!speaking.delete(speech) || speaking.size) return;
+    if (!speaking.delete(speech)) return;
+    speechCaption.hidden = true;
+    if (speaking.size) return;
     stopSpeech.hidden = true;
     voiceStatus.textContent = message;
   }
+  speech.onstart = () => {
+    if (!speaking.has(speech)) return;
+    speechCaption.textContent = text;
+    speechCaption.hidden = false;
+  };
   speech.onend = () => finish('Leitura concluída.');
   speech.onerror = () => finish('Não foi possível reproduzir o áudio.');
   window.speechSynthesis.speak(speech);
@@ -228,6 +240,7 @@ dictate.addEventListener('click', async () => {
     return;
   }
   if (typeof Recognition?.available !== 'function' || !('processLocally' in Recognition.prototype)) {
+    microphoneStatus.textContent = 'Microfone indisponível';
     voiceStatus.textContent = 'Este navegador não disponibiliza ditado local. Podes escrever o pedido.';
     return;
   }
@@ -235,7 +248,8 @@ dictate.addEventListener('click', async () => {
   dictate.disabled = true;
   send.disabled = true;
   voiceStatus.textContent = 'A verificar o ditado local…';
-  function finish() {
+  function finish(micStatus = "Microfone inativo") {
+    microphoneStatus.textContent = micStatus;
     capture?.getTracks().forEach(track => track.stop());
     capture = undefined;
     recognition = undefined;
@@ -252,7 +266,7 @@ dictate.addEventListener('click', async () => {
         && typeof Recognition.install === 'function';
       if (!canInstall || !await Recognition.install(options)) {
         voiceStatus.textContent = 'O ditado local em português de Portugal está indisponível.';
-        finish();
+        finish('Microfone indisponível');
         return;
       }
     }
@@ -266,6 +280,7 @@ dictate.addEventListener('click', async () => {
     session.onstart = () => {
       dictate.disabled = false;
       dictate.textContent = 'Parar ditado';
+      microphoneStatus.textContent = 'Microfone ativo';
       voiceStatus.textContent = 'A ouvir…';
     };
     session.onresult = event => {
@@ -288,7 +303,7 @@ dictate.addEventListener('click', async () => {
       voiceStatus.textContent = event.error === 'not-allowed'
         ? 'Permite o acesso ao microfone para ditar.'
         : 'Não foi possível transcrever. Podes escrever o pedido.';
-      finish();
+      finish('Microfone indisponível');
     };
     session.onend = () => {
       if (recognition !== session) return;
@@ -307,7 +322,7 @@ dictate.addEventListener('click', async () => {
     refreshMicrophones().catch(() => {});
   } catch {
     voiceStatus.textContent = 'Não foi possível iniciar o ditado. Verifica a permissão e o microfone selecionado.';
-    finish();
+    finish('Microfone indisponível');
   }
 });
 
@@ -398,6 +413,18 @@ form.addEventListener('submit', async event => {
   requestController = controller;
   cancelRequest.hidden = false;
   try {
+    if (/^(?:jarvis,? )?cancela (?:o )?(?:último )?lembrete[.!?]?$/i.test(content)) {
+      const entry = pendingReminder;
+      if (entry) {
+        window.clearTimeout(entry.timer);
+        pendingReminder = undefined;
+      }
+      answer.textContent = entry ? 'Lembrete cancelado.' : 'Não há um lembrete pendente para cancelar.';
+      activity.firstElementChild.textContent = 'Pedido processado localmente';
+      status.textContent = 'Pronto';
+      streamedSpeech = undefined;
+      return;
+    }
     if (correction && !previous) throw new Error('Não há um lembrete pendente para corrigir.');
     const outgoing = previous ? {...user, content: 'Lembra-me ' + correction[1] + ' de ' + previous.label} : user;
     const response = await fetch('/chat', {

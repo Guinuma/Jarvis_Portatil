@@ -42,6 +42,13 @@ Para procurar as notas da última sessão, guarda os ficheiros `.md` ou `.txt` e
 
 Para agendar um aviso, escreve «Lembra-me daqui a 45 minutos de fazer uma pausa». Mantém o separador do JARVIS aberto até à hora do lembrete. Também podes pedir «Jarvis, abre o meu projeto, encontra as notas da última sessão e lembra-me daqui a 45 minutos de fazer uma pausa» num único pedido.
 
+Outros pedidos locais:
+
+- «Cria um temporizador de 5 minutos», «Lembra-me às 18:30 de fazer uma pausa» e «Cancela o lembrete».
+- «Encontra o ficheiro README», «Procura conteúdo Ollama» ou «Abre o ficheiro README.md».
+- «Cria o ficheiro rascunho.txt» e «Guarda uma nota Rever os resultados». Estes pedidos operam na pasta do JARVIS.
+- «Abre a calculadora» e «Abre o site example.org». As aplicações reconhecidas incluem Calculadora, Bloco de Notas, Explorador e Paint.
+
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
 
 ## Verificar a base local
