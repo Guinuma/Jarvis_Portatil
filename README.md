@@ -63,6 +63,8 @@ Para a lista de compras, usa «Adiciona pão à lista de compras», «Marca como
 
 Corre `python -m scripts.backup_memory memoria.sqlite3` para copiar o perfil atual. Para restaurar sem substituir um perfil existente, corre `python -m scripts.backup_memory memoria.sqlite3 --restore-to recuperado`. O histórico guardado no navegador fica separado desta cópia.
 
+Para organizar ficheiros dentro do projeto, usa `Renomeia "rascunho.txt" para "nota.txt"`, `Move "nota.txt" para "notes/nota.txt"` ou «Encontra duplicados». O movimento requer uma pasta de destino existente e um sistema de ficheiros com ligações rígidas. Os duplicados são agrupados por conteúdo e apresentados para revisão.
+
 ## Verificar a base local
 
 Com o Ollama aberto, corre `python -m scripts.check_local --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.

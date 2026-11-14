@@ -200,10 +200,10 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Ficheiros e documentos
 
-- [ ] Renomear um ficheiro e confirmar o novo nome.
-- [ ] Mover um ficheiro e confirmar que está no destino.
+- [x] Renomear um ficheiro e confirmar o novo nome. Validado numa pasta de teste.
+- [x] Mover um ficheiro e confirmar que está no destino. O teste confirmou também a recusa de sobrescrita.
 - [ ] Pré-visualizar uma reorganização de Downloads e aplicar apenas os movimentos aprovados.
-- [ ] Identificar duplicados e apresentar os caminhos e o critério usado para os agrupar.
+- [x] Identificar duplicados por SHA-256 e apresentar os caminhos. Validado com ficheiros de teste.
 - [ ] Comprimir os ficheiros selecionados e confirmar o conteúdo do arquivo.
 - [ ] Extrair um arquivo para a pasta escolhida e confirmar os ficheiros extraídos.
 - [ ] Converter um ficheiro para o formato pedido e verificar que abre no formato de destino.

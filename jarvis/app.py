@@ -21,6 +21,7 @@ from urllib.request import Request, urlopen
 from .integrations.editor import normalize, open_project, project_request, resolve_project
 
 from .integrations.notes import latest_notes, notes_request
+from .integrations.organize import organize_files
 from .integrations.project_files import file_command
 from .integrations.reminders import COMBINED, parse_reminder
 from .integrations.windows import windows_command
@@ -253,7 +254,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
         try:
-            file_reply = file_command(text, ROOT)
+            file_reply = organize_files(text, ROOT)
+            if file_reply is None:
+                file_reply = file_command(text, ROOT)
         except (OSError, ValueError, RuntimeError) as error:
             return self.send_content(400, {"error": f"Ficheiro indisponível: {error}"})
         if file_reply is not None:
