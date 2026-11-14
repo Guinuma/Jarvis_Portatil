@@ -14,6 +14,23 @@ O teste envia uma pergunta curta em português e verifica a hora na resposta. A 
 
 [Configuração do Ollama no Hermes Agent](https://hermes-agent.nousresearch.com/docs/guides/local-ollama-setup) · [API local do Hermes Agent](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)
 
+### Testar a ferramenta de leitura
+
+Para disponibilizar apenas a ferramenta de listagem à API local do Hermes, acrescenta ao `config.yaml` do Hermes as entradas abaixo. Se as secções já existirem, acrescenta as chaves às secções correspondentes. Usa o caminho absoluto do Python, do script e da pasta autorizada. No Windows, podes usar barras normais nos caminhos.
+
+```yaml
+mcp_servers:
+  jarvis_files:
+    command: C:/caminho/python.exe
+    args:
+      - C:/caminho/Jarvis_Portatil/jarvis_files_mcp.py
+      - C:/caminho/Jarvis_Portatil/holo/sample-notes
+platform_toolsets:
+  api_server: [jarvis_files]
+```
+
+Reinicia o gateway e pede «Que ficheiros tenho na pasta autorizada?». A ferramenta devolve os nomes dos ficheiros na pasta indicada. Testa a recusa com «Usa listar_ficheiros com pasta ..». A ferramenta verifica o caminho resolvido e recusa pastas fora da raiz configurada.
+
 ## Projetos de referência
 
 - [Jarvis](https://github.com/isair/jarvis) para voz, chat e memória local com Ollama.
