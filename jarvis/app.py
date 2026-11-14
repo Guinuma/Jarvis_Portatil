@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .integrations.editor import is_open_project_request, open_project
+from .integrations.editor import open_project, project_request, resolve_project
 
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
@@ -102,14 +102,26 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError
         except (KeyError, TypeError, ValueError):
             return self.send_content(400, {"error": "O pedido de conversa está vazio ou é demasiado grande."})
-        if is_open_project_request(messages[-1]["content"]):
+        project = project_request(messages[-1]["content"])
+        if project is not None:
             try:
-                open_project(ROOT)
-            except FileNotFoundError as error:
+                matches = resolve_project(project, ROOT)
+            except (KeyError, TypeError, ValueError, OSError, RuntimeError):
+                return self.send_content(503, {"error": "Verifica o ficheiro JARVIS_PROJECTS_FILE."})
+            if not matches:
+                return self.send_content(200, {"reply": "Não encontrei esse projeto na lista de pastas autorizadas."})
+            if len(matches) > 1:
+                options = "\n".join(f'Abre o projeto "{folder}"' for _, folder in matches)
+                return self.send_content(200, {"reply": f"Encontrei vários projetos com esse nome. Escolhe um destes pedidos:\n{options}"})
+            name, folder = matches[0]
+            try:
+                open_project(folder)
+            except (FileNotFoundError, NotADirectoryError) as error:
                 return self.send_content(503, {"error": str(error)})
             except OSError:
                 return self.send_content(503, {"error": "Não consegui abrir o VS Code."})
-            return self.send_content(200, {"reply": "Pedi ao VS Code para abrir o projeto JARVIS Portátil."})
+            return self.send_content(200, {"reply": f"Pedi ao VS Code para abrir o projeto {name}."})
+
 
         if not self.key:
             return self.send_content(503, {"error": "Configura a chave da API local do Hermes e reinicia o JARVIS."})

@@ -23,6 +23,17 @@ Carrega em **Ditar** ou prime **Alt+Shift+D** com a janela do JARVIS em foco par
 
 Para abrir este repositório no editor, escreve «Jarvis, abre o meu projeto no VS Code». O JARVIS procura o VS Code pelo executável ou pelo atalho `code` do Windows.
 
+Para adicionar outros projetos, define `JARVIS_PROJECTS_FILE` na sessão que arranca o JARVIS com o caminho de um ficheiro JSON como este:
+
+```json
+[
+  {"nome": "Física", "pasta": "C:/Projetos/Física"},
+  {"nome": "Física", "pasta": "D:/Arquivo/Física"}
+]
+```
+
+Pede «Abre o projeto Física no VS Code». Se houver vários resultados, o chat mostra um pedido com o caminho completo para cada opção. Usa um desses pedidos para escolher. O JARVIS só abre caminhos presentes na lista ou a pasta do seu próprio repositório.
+
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
 
 ## Verificar a base local

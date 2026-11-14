@@ -339,7 +339,7 @@ form.addEventListener('submit', async event => {
     const reply = local ? (await response.json()).reply : await readReply(response, answer, speech);
     if (local) {
       answer.textContent = reply;
-      activity.firstElementChild.textContent = 'Pedido local · abrir VS Code';
+      activity.firstElementChild.textContent = 'Pedido local · projetos do VS Code';
       readStreamedText(speech, reply, true);
     }
     history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
