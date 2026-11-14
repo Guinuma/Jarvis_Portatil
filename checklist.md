@@ -32,15 +32,15 @@ Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na d
 - [x] Ligar a ferramenta de listagem ao Hermes por MCP e confirmar, através da API local, que o agente a chama e usa o resultado.
 - [x] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta de listagem indisponível ou não executada. Validado com uma chamada real ao Hermes, um modelo inexistente e falhas de ligação e ausência do evento simuladas.
 - [x] Criar testes automatizados do registo, da listagem autorizada, de argumentos inválidos e do acesso a pastas externas ou inexistentes.
-- [ ] Automatizar a regressão de ponta a ponta com pedidos em PT-PT ao Hermes, incluindo a escolha da ferramenta e a resposta a falhas de execução.
+- [x] Automatizar a regressão de ponta a ponta com pedidos em PT-PT ao Hermes, incluindo a escolha da ferramenta e a resposta a falhas de execução.
 
 ### Permissões e privacidade
 
-- [ ] Aplicar permissões por ferramenta e utilizador antes de executar uma chamada. Testar que uma chamada recusada não produz efeitos.
+- [x] Aplicar permissões por ferramenta e utilizador antes de executar uma chamada. Testar que uma chamada recusada não produz efeitos.
 - [x] Restringir ferramentas de ficheiros às pastas autorizadas. Testar um caminho fora dessas pastas.
-- [ ] Guardar credenciais fora das conversas e verificar que ficam ausentes do histórico apresentado ao utilizador.
-- [ ] Registar o que o JARVIS executou, porquê e com que resultado, incluindo pedidos recusados e falhas.
-- [ ] Tratar instruções encontradas em sites, emails e PDFs como conteúdo externo. Testar que um documento que manda enviar dados não desencadeia um envio.
+- [x] Guardar credenciais fora das conversas e verificar que ficam ausentes do histórico apresentado ao utilizador.
+- [x] Registar o que o JARVIS executou, porquê e com que resultado, incluindo pedidos recusados e falhas.
+- [x] Tratar instruções encontradas em sites, emails e PDFs como conteúdo externo. Testar que um documento que manda enviar dados não desencadeia um envio.
 
 ### Teste de aceitação da base técnica
 
@@ -48,9 +48,12 @@ Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na d
 
 - [x] Confirmar que o Hermes Agent usa o modelo configurado no Ollama e escolhe a ferramenta de listagem com a pasta certa.
 - [x] Confirmar que o JARVIS apresenta os ficheiros reais numa resposta em português de Portugal.
-- [ ] Retirar a permissão à pasta e repetir o pedido. Confirmar que a leitura é recusada e que a recusa fica registada.
+- [x] Retirar a permissão à pasta e repetir o pedido. Confirmar que a leitura é recusada e que a recusa fica registada.
 - [x] Pedir a listagem de uma pasta fora da raiz autorizada e confirmar a recusa na resposta e nos registos do Hermes.
-- [ ] Desligar o Ollama e repetir o pedido. Confirmar que o diagnóstico identifica a falha e que o JARVIS comunica o erro.
+- [x] Desligar o Ollama e repetir o pedido. Confirmar que o diagnóstico identifica a falha e que o JARVIS comunica o erro.
+
+Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes com Qwen3, as notas de exemplo e uma política por conta local do gateway. A auditoria confirmou a listagem, as falhas e a recusa após retirar a autorização. A app respondeu a um excerto de PDF que continha uma instrução de envio sem chamar ferramentas. Nesta fase, o conteúdo externo foi fornecido como excerto de texto. O teste de indisponibilidade parou uma instância isolada do Ollama e verificou o erro no diagnóstico e na app.
+
 
 ## Fase 2 — MVP
 

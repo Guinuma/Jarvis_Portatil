@@ -31,7 +31,10 @@ def request_json(url, payload=None, key=None, *, stream=False):
 
 def check_ollama(model):
     base_url = "http://127.0.0.1:11434"
-    version = request_json(f"{base_url}/api/version")["version"]
+    try:
+        version = request_json(f"{base_url}/api/version")["version"]
+    except (URLError, TimeoutError) as error:
+        raise ValueError("O Ollama não respondeu. Confirma que está aberto.") from error
     try:
         capabilities = request_json(f"{base_url}/api/show", {"model": model})["capabilities"]
     except HTTPError as error:

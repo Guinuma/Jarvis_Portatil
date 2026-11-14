@@ -39,6 +39,11 @@ platform_toolsets:
 
 Reinicia o gateway e pede «Que ficheiros tenho na pasta autorizada?». A ferramenta devolve os nomes dos ficheiros na pasta indicada. Testa a recusa com «Usa listar_ficheiros com pasta ..». A ferramenta verifica o caminho resolvido e recusa pastas fora da raiz configurada.
 
+Para verificar a Fase 1 de ponta a ponta, configura também os argumentos `--policy caminho/permissoes.json` e `--audit caminho/auditoria.jsonl` no servidor MCP. O JSON de permissões mapeia o nome da conta local que executa o gateway para as ferramentas autorizadas, por exemplo `{"conta-windows":["listar_ficheiros"]}`. A política é relida a cada chamada. A API do Hermes serve uma única conta local nesta fase. Usa as notas de exemplo como raiz e um ficheiro de auditoria fora da raiz.
+
+Corre `python verify_phase1.py --policy caminho/permissoes.json --audit caminho/auditoria.jsonl` sem outros pedidos em curso. O teste retira temporariamente a permissão, verifica a recusa e repõe a política no final. Para o teste de serviço parado, usa a opção `--offline` com o Ollama desligado e volta a abri-lo depois.
+
+
 ## Projetos de referência
 
 - [Jarvis](https://github.com/isair/jarvis) para voz, chat e memória local com Ollama.

@@ -46,3 +46,16 @@ class FileToolTest(unittest.TestCase):
                 result = self.call({"pasta": folder})
                 self.assertTrue(result["isError"])
                 self.assertNotIn("privado.md", result["content"][0]["text"])
+
+    def test_recusa_sem_autorizacao_antes_da_listagem(self):
+        from unittest.mock import patch
+
+        policy = self.root.parent / "policy.json"
+        policy.write_text(json.dumps({"alice": ["listar_ficheiros"]}), encoding="utf-8")
+        request = {"id": 1, "method": "tools/call", "params": {
+            "name": "listar_ficheiros", "arguments": {"pasta": "."},
+        }}
+        self.assertFalse(respond(request, self.root, user="alice", policy=policy)["result"]["isError"])
+        with patch("jarvis_files_mcp.list_files") as read:
+            self.assertTrue(respond(request, self.root, user="bob", policy=policy)["result"]["isError"])
+            read.assert_not_called()
