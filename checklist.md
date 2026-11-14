@@ -104,7 +104,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [ ] Encontrar ficheiros pelo nome nas pastas autorizadas e apresentar ligações para os abrir.
 - [ ] Encontrar ficheiros pelo conteúdo nas pastas autorizadas.
-- [ ] Pesquisar notas e identificar as da última sessão de um projeto, mostrando os ficheiros e a origem da data usada para os selecionar.
+- [x] Encontrar as notas da última sessão de um projeto autorizado em `notes/AAAA-MM-DD/`, mostrando os ficheiros e a origem da data. Validado no chat com pastas de teste.
 
 ### Ficheiros e documentos
 

@@ -14,6 +14,8 @@ from urllib.request import Request, urlopen
 
 from .integrations.editor import open_project, project_request, resolve_project
 
+from .integrations.notes import latest_notes, notes_request
+
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
 OLLAMA_VERSION_URL = "http://127.0.0.1:11434/api/version"
@@ -103,17 +105,31 @@ class Handler(BaseHTTPRequestHandler):
         except (KeyError, TypeError, ValueError):
             return self.send_content(400, {"error": "O pedido de conversa está vazio ou é demasiado grande."})
         project = project_request(messages[-1]["content"])
-        if project is not None:
+        notes = notes_request(messages[-1]["content"])
+        if project is not None or notes is not None:
             try:
-                matches = resolve_project(project, ROOT)
+                matches = resolve_project(project if notes is None else notes, ROOT)
             except (KeyError, TypeError, ValueError, OSError, RuntimeError):
                 return self.send_content(503, {"error": "Verifica o ficheiro JARVIS_PROJECTS_FILE."})
             if not matches:
                 return self.send_content(200, {"reply": "Não encontrei esse projeto na lista de pastas autorizadas."})
             if len(matches) > 1:
-                options = "\n".join(f'Abre o projeto "{folder}"' for _, folder in matches)
+                command = "Abre o projeto" if notes is None else "Encontra as notas da última sessão do projeto"
+                options = "\n".join(f'{command} "{folder}"' for _, folder in matches)
                 return self.send_content(200, {"reply": f"Encontrei vários projetos com esse nome. Escolhe um destes pedidos:\n{options}"})
             name, folder = matches[0]
+            if notes is not None:
+                try:
+                    session, paths = latest_notes(folder)
+                except (OSError, ValueError, RuntimeError):
+                    return self.send_content(503, {"error": "Não consegui consultar a pasta de notas."})
+                if session is None:
+                    return self.send_content(200, {"reply": f"Não encontrei notas de sessão em {folder / 'notes'}."})
+                files = "\n".join(f"- {path}" for path in paths)
+                return self.send_content(200, {"reply": (
+                    f"Última sessão de {name}: {session:%d/%m/%Y} (data no nome da pasta).\n"
+                    f"Projeto: {folder}\n{files}"
+                )})
             try:
                 open_project(folder)
             except (FileNotFoundError, NotADirectoryError) as error:
