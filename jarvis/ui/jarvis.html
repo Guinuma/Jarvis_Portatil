@@ -633,5 +633,18 @@ for (const button of routinePanel.querySelectorAll('[data-routine]')) {
     form.requestSubmit();
   });
 }
+async function checkAgendaAlerts() {
+  try {
+    const response = await fetch('/agenda-alerts', {method:'POST', headers});
+    if (!response.ok) return;
+    const {alerts} = await response.json();
+    for (const alert of alerts) {
+      const message = document.createElement('p');
+      message.textContent = 'Agenda: ' + alert.title;
+      document.querySelector('#reminders').append(message);
+    }
+  } catch {}
+}
+setInterval(checkAgendaAlerts, 10000);
 </script>
 </html>

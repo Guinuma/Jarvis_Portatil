@@ -179,8 +179,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Pesquisa pessoal
 
-- [ ] Pesquisar texto em PDFs nas pastas autorizadas.
-- [ ] Pesquisar transcrições guardadas nas pastas autorizadas.
+- [x] Pesquisar texto em PDFs nas pastas autorizadas.
+- [x] Pesquisar transcrições guardadas nas pastas autorizadas.
 - [ ] Indexar o texto de documentos digitalizados por reconhecimento ótico de caracteres e encontrar uma passagem que só exista na imagem.
 - [ ] Resumir um documento encontrado e apresentar a ligação para o original.
 - [ ] Responder a perguntas com ligações para as fontes e páginas quando aplicável.
@@ -188,12 +188,12 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Windows e aplicações
 
-- [ ] Gerir janelas, incluindo mover, minimizar, maximizar e restaurar uma janela identificada.
-- [ ] Mover uma janela para o monitor indicado e confirmar a sua posição.
+- [x] Gerir janelas, incluindo mover, minimizar, maximizar e restaurar uma janela identificada.
+- [x] Mover uma janela para o monitor indicado e confirmar a sua posição.
 - [ ] Ativar o modo de foco do Windows e verificar o estado.
-- [ ] Consultar a bateria e apresentar a percentagem e o estado de carregamento.
-- [ ] Consultar o armazenamento e apresentar o espaço disponível na unidade pedida.
-- [ ] Fazer uma captura de ecrã e devolver o ficheiro criado.
+- [x] Consultar a bateria e apresentar a percentagem e o estado de carregamento.
+- [x] Consultar o armazenamento e apresentar o espaço disponível na unidade pedida.
+- [x] Fazer uma captura de ecrã e devolver o ficheiro criado.
 - [ ] Ler a seleção ativa a pedido e apresentar o texto selecionado.
 - [ ] Ler a área de transferência a pedido e confirmar que a ferramenta só a consulta quando autorizada.
 - [ ] Criar espaços de trabalho como «modo estudo» e «modo programação» e verificar as aplicações, pastas e janelas abertas para cada um.
@@ -205,20 +205,20 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Pré-visualizar uma reorganização de Downloads e aplicar apenas os movimentos aprovados.
 - [x] Identificar duplicados por SHA-256 e apresentar os caminhos. Validado com ficheiros de teste.
 - [ ] Comprimir os ficheiros selecionados e confirmar o conteúdo do arquivo.
-- [ ] Extrair um arquivo para a pasta escolhida e confirmar os ficheiros extraídos.
-- [ ] Converter um ficheiro para o formato pedido e verificar que abre no formato de destino.
+- [x] Extrair um arquivo para a pasta escolhida e confirmar os ficheiros extraídos.
+- [x] Converter um ficheiro para o formato pedido e verificar que abre no formato de destino.
 - [ ] Preparar uma cópia de segurança de ficheiros selecionados e restaurar um ficheiro de teste para confirmar que é utilizável.
 
 ### Agenda e tarefas
 
-- [ ] Criar um evento e verificar o título, a data, a hora e o calendário de destino.
-- [ ] Reagendar um evento e verificar o novo horário no calendário.
-- [ ] Detetar conflitos antes de criar ou reagendar um evento e mostrar os compromissos que se sobrepõem.
-- [ ] Preparar a agenda do dia por ordem cronológica.
-- [ ] Criar uma tarefa recorrente e verificar a próxima ocorrência após concluir a atual.
-- [ ] Criar um lembrete associado a um evento e confirmar que acompanha o evento quando este é reagendado.
-- [ ] Reservar um bloco de foco e verificar que aparece na agenda.
-- [ ] Configurar a antecedência de um aviso de compromisso e confirmar que dispara no momento definido.
+- [x] Criar um evento e verificar o título, a data, a hora e o calendário de destino.
+- [x] Reagendar um evento e verificar o novo horário no calendário.
+- [x] Detetar conflitos antes de criar ou reagendar um evento e mostrar os compromissos que se sobrepõem.
+- [x] Preparar a agenda do dia por ordem cronológica.
+- [x] Criar uma tarefa recorrente e verificar a próxima ocorrência após concluir a atual.
+- [x] Criar um lembrete associado a um evento e confirmar que acompanha o evento quando este é reagendado.
+- [x] Reservar um bloco de foco e verificar que aparece na agenda.
+- [x] Configurar a antecedência de um aviso de compromisso e confirmar que dispara no momento definido.
 
 ### Vida prática
 
@@ -226,15 +226,15 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Rotinas e fluxos
 
-- [ ] Criar uma regra do tipo «quando acontecer X, faz Y» e testar que reage ao evento escolhido.
+- [x] Criar uma regra do tipo «quando acontecer X, faz Y» e testar que reage ao evento escolhido.
 - [ ] Agendar uma rotina e confirmar que arranca à hora configurada.
-- [ ] Adicionar uma condição a uma rotina e testar os casos em que é verdadeira e falsa.
+- [x] Adicionar uma condição a uma rotina e testar os casos em que é verdadeira e falsa.
 - [ ] Pré-visualizar as etapas, os destinos e os efeitos previstos de uma rotina.
 - [ ] Executar uma rotina manualmente a partir do painel, independentemente do horário.
 - [ ] Mostrar o histórico da rotina com a hora, os passos executados e o resultado.
-- [ ] Configurar «bom dia» para preparar a agenda e mostrar as tarefas do dia.
+- [x] Configurar «bom dia» para preparar a agenda e mostrar as tarefas do dia.
 - [ ] Configurar «modo programação» para ativar o espaço de trabalho escolhido e abrir as notas do projeto.
-- [ ] Configurar «fecha o dia» para rever o que ficou pendente e guardar uma nota de fecho.
+- [x] Configurar «fecha o dia» para rever o que ficou pendente e guardar uma nota de fecho.
 - [ ] Interpretar «faz como da última vez» e recuperar a rotina correspondente. Pedir esclarecimento se houver duas rotinas plausíveis.
 
 ### Painel e acessibilidade
@@ -253,6 +253,12 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Restaurar uma cópia de segurança de teste e verificar que recupera as definições, memórias e rotinas esperadas.
 
 ### Validação parcial
+
+- [x] Encontrar uma passagem que só existe na imagem de um PDF, com OCR a pedido e referência à página.
+- [x] Criar um ZIP de um ficheiro e extrair uma cópia com conteúdo idêntico. Validar a recusa de um caminho externo dentro do ZIP.
+- [x] Copiar um ficheiro de teste e confirmar o conteúdo da cópia.
+- [x] Confirmar com uma janela de teste do Windows as operações de minimizar, maximizar, restaurar e mudar de monitor.
+- [x] Confirmar com relógio de teste que o aviso acompanha um evento reagendado e só é entregue uma vez.
 
 - [x] Enviar o pedido combinado pela API local e confirmar o registo da memória, a localização da nota de teste e o agendamento para as 09:00.
 - [x] Reabrir a base local, avançar o relógio de teste e confirmar que a rotina é executada uma vez, com o VS Code simulado.

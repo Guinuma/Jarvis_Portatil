@@ -65,6 +65,14 @@ Corre `python -m scripts.backup_memory memoria.sqlite3` para copiar o perfil atu
 
 Para organizar ficheiros dentro do projeto, usa `Renomeia "rascunho.txt" para "nota.txt"`, `Move "nota.txt" para "notes/nota.txt"` ou «Encontra duplicados». O movimento requer uma pasta de destino existente e um sistema de ficheiros com ligações rígidas. Os duplicados são agrupados por conteúdo e apresentados para revisão.
 
+### Comandos da Fase 3
+
+- **PDFs:** «Procura nos PDFs temporizadores», «Procura nos PDFs com OCR temporizadores» e `Resume o PDF "notas.pdf"`. Instala `pypdf` para pesquisar e resumir PDFs. Para OCR, instala também Poppler com `pdftoppm` e Tesseract. A pesquisa mostra a página e faz OCR a pedido nas primeiras 20 páginas sem texto.
+- **Agenda local:** `Cria um evento "Reunião" em 2026-11-15 10:00 por 30 minutos`, «Mostra a agenda de amanhã», «Reagenda o evento 1 para 2026-11-15 11:00» e «Avisa-me 10 minutos antes do evento 1». Mantém o chat aberto para receber os avisos.
+- **Rotinas:** «Bom dia» mostra a agenda e as tarefas. «Fecha o dia» guarda uma nota com as tarefas. `Quando aparecer "pronto.txt" e existir "ok.txt", ativa o modo programação` guarda uma regra que executa uma vez enquanto o servidor estiver aberto.
+- **Ficheiros:** `Comprime "nota.txt" para "nota.zip"`, `Extrai "nota.zip" para "extraido"`, `Copia "nota.txt" para "backup.txt"` e `Converte "nota.txt" para "nota.md"`.
+- **Windows:** «Consulta a bateria», «Consulta o armazenamento da unidade C», «Faz uma captura de ecrã», «Mostra os monitores» e `Move a janela "Calculadora" para o monitor 2`. As capturas são guardadas na pasta `capturas/` do projeto e requerem Pillow.
+
 ## Verificar a base local
 
 Com o Ollama aberto, corre `python -m scripts.check_local --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.

@@ -11,7 +11,7 @@ COMMAND = re.compile(
     r"(?:jarvis[, ]+)?(encontra (?:o )?ficheiro|procura (?:por )?conteudo|"
     r"abre (?:o )?ficheiro|cria (?:o )?ficheiro|guarda (?:uma )?nota) (.+)"
 )
-TEXT_TYPES = {".md", ".txt", ".csv", ".json", ".py", ".js", ".html"}
+TEXT_TYPES = {".md", ".txt", ".csv", ".json", ".py", ".js", ".html", ".vtt", ".srt"}
 SKIP = {".git", ".venv", "node_modules", "__pycache__", "vendor"}
 
 

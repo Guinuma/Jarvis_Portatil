@@ -30,6 +30,20 @@ class Memory:
             connection.execute("""CREATE TABLE IF NOT EXISTS shopping (
                 name TEXT PRIMARY KEY, bought INTEGER NOT NULL DEFAULT 0
             )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS agenda (
+                id INTEGER PRIMARY KEY, title TEXT NOT NULL,
+                starts REAL NOT NULL, ends REAL NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS event_alerts (
+                event_id INTEGER PRIMARY KEY, lead INTEGER NOT NULL, sent INTEGER NOT NULL DEFAULT 0
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY, title TEXT NOT NULL, due TEXT NOT NULL, days INTEGER NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS file_rules (
+                id INTEGER PRIMARY KEY, event_path TEXT NOT NULL, condition_path TEXT,
+                status TEXT NOT NULL DEFAULT 'pendente', result TEXT
+            )""")
             return [dict(row) for row in connection.execute(query, parameters)]
 
     def list(self):

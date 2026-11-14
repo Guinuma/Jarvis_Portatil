@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import webbrowser
+from zipfile import BadZipFile
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -21,13 +22,17 @@ from urllib.request import Request, urlopen
 from .integrations.editor import normalize, open_project, project_request, resolve_project
 
 from .integrations.notes import latest_notes, notes_request
+from .integrations.archives import archive_command
+from .integrations.documents import pdf_command
+from .integrations.desktop import desktop_query
 from .integrations.organize import organize_files
 from .integrations.project_files import file_command
 from .integrations.reminders import COMBINED, parse_reminder
 from .integrations.windows import windows_command
 
+from .agenda import agenda_command, due_alerts
 from .memory import Memory
-from .routines import run_due, run_now, schedule_programming, tomorrow_at_nine
+from .routines import check_file_rules, daily_routine, file_rule_command, run_due, run_now, schedule_programming, tomorrow_at_nine
 
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
@@ -132,6 +137,11 @@ class Handler(BaseHTTPRequestHandler):
             except OSError:
                 return self.send_content(503, {"error": "Não consegui abrir as definições de som."})
             return self.send_content(200, {"opened": True})
+        if self.path == "/agenda-alerts":
+            try:
+                return self.send_content(200, {"alerts": due_alerts(local_memory())})
+            except (OSError, ValueError, sqlite3.Error):
+                return self.send_content(503, {"error": "Agenda local indisponível."})
         if self.path == "/memory":
             return self.memory_request()
         if self.path != "/chat":
@@ -169,9 +179,18 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_content(503, {"error": "Não consegui concluir todos os passos. Confirma a memória e a rotina antes de repetir."})
             return self.send_content(200, {"reply": "\n\n".join(reply)})
         try:
-            memory_reply = local_memory().command(text)
-        except (OSError, sqlite3.Error, ValueError):
-            return self.send_content(503, {"error": "Não consegui atualizar a memória local."})
+            memory = local_memory()
+            memory_reply = memory.command(text)
+            if memory_reply is None:
+                memory_reply = agenda_command(text, memory)
+            if memory_reply is None:
+                memory_reply = daily_routine(normalize(text).rstrip(".!?"), memory, ROOT)
+            if memory_reply is None:
+                memory_reply = file_rule_command(text, memory, ROOT)
+        except ValueError as error:
+            return self.send_content(400, {"error": str(error)})
+        except (OSError, sqlite3.Error, KeyError, TypeError, RuntimeError):
+            return self.send_content(503, {"error": "Não consegui consultar os dados locais."})
         if memory_reply is not None:
             return self.send_content(200, {"reply": memory_reply})
         routine = normalize(text).rstrip(".!")
@@ -254,18 +273,24 @@ class Handler(BaseHTTPRequestHandler):
 
 
         try:
-            file_reply = organize_files(text, ROOT)
+            file_reply = archive_command(text, ROOT)
+            if file_reply is None:
+                file_reply = organize_files(text, ROOT)
+            if file_reply is None:
+                file_reply = pdf_command(text, ROOT)
             if file_reply is None:
                 file_reply = file_command(text, ROOT)
-        except (OSError, ValueError, RuntimeError) as error:
+        except (OSError, ValueError, RuntimeError, BadZipFile) as error:
             return self.send_content(400, {"error": f"Ficheiro indisponível: {error}"})
         if file_reply is not None:
             return self.send_content(200, {"reply": file_reply})
 
         if sys.platform == "win32":
             try:
-                windows_reply = windows_command(text)
-            except (OSError, ValueError) as error:
+                windows_reply = desktop_query(text, ROOT)
+                if windows_reply is None:
+                    windows_reply = windows_command(text)
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
                 return self.send_content(400, {"error": str(error)})
             if windows_reply is not None:
                 return self.send_content(200, {"reply": windows_reply})
@@ -358,6 +383,7 @@ def main():
             while not stop_routines.is_set():
                 try:
                     run_due(memory, ROOT)
+                    check_file_rules(memory, ROOT)
                 except (OSError, sqlite3.Error):
                     logging.exception("Falha ao consultar rotinas locais.")
                 stop_routines.wait(1)
