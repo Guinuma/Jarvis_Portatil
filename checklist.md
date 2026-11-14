@@ -59,7 +59,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Voz
 
-- [ ] Abrir a escuta por tecla de atalho e confirmar que o microfone muda para o estado ativo.
+- [x] Implementar Alt+Shift+D para iniciar e parar o ditado com o JARVIS em foco. Validado com reconhecimento simulado.
+- [ ] Confirmar que o microfone físico fica ativo ao usar Alt+Shift+D.
 - [x] Implementar o botão **Ditar** para iniciar e parar a transcrição local em PT-PT e rever o texto antes de enviar. Validado no Chromium com reconhecimento simulado.
 - [x] Disponibilizar **Ouvir resposta**, dar preferência a uma voz local PT-PT e expor **Parar leitura** durante a reprodução. Validado com síntese simulada.
 - [ ] Confirmar a leitura em voz alta com uma voz portuguesa instalada e a saída de áudio do portátil.

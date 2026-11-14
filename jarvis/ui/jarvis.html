@@ -41,7 +41,7 @@ form{display:flex;gap:8px}input{width:100%;min-width:0;color:var(--text);backgro
       <button class="submit" type="submit">Enviar</button>
     </form>
     <div class="voice-controls">
-      <button type="button" id="dictate">Ditar</button>
+      <button type="button" id="dictate" aria-keyshortcuts="Alt+Shift+D" title="Alt+Shift+D">Ditar</button>
       <button type="button" id="stop-speech" hidden>Parar leitura</button>
       <span id="voice-status" role="status"></span>
     </div>
@@ -106,6 +106,13 @@ function readAloud(text) {
   speech.onerror = () => finish('Não foi possível reproduzir o áudio.');
   window.speechSynthesis.speak(speech);
 }
+
+document.addEventListener('keydown', event => {
+  if (event.code !== 'KeyD' || !event.altKey || !event.shiftKey || event.ctrlKey ||
+      event.metaKey || event.repeat || event.isComposing || dictate.disabled) return;
+  event.preventDefault();
+  dictate.click();
+});
 
 dictate.addEventListener('click', async () => {
   if (recognition) {
