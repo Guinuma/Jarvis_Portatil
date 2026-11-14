@@ -169,10 +169,10 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Guardar uma rotina com o nome escolhido e recuperá-la por esse nome.
 - [ ] Interpretar «lembra-te disto», guardar a informação indicada e mostrá-la no editor.
 - [ ] Interpretar «esquece isto» e confirmar que a memória selecionada deixa de ser recuperada.
-- [ ] Pesquisar conversas anteriores e abrir a conversa onde aparece o resultado.
+- [x] Pesquisar conversas anteriores e abrir a conversa onde aparece o resultado.
 - [ ] Identificar nas respostas se uma afirmação veio de uma memória guardada ou de uma dedução.
-- [ ] Mostrar a data e a origem de cada memória.
-- [ ] Editar uma memória e confirmar que a próxima consulta usa o valor atualizado.
+- [x] Mostrar a data e a origem de cada memória.
+- [x] Editar uma memória e confirmar que a próxima consulta usa o valor atualizado.
 - [ ] Apagar uma memória pelo editor e confirmar que deixa de aparecer na pesquisa e nas respostas.
 - [ ] Exportar as memórias num ficheiro legível, com a data e a origem dos registos.
 - [ ] Isolar as memórias e o histórico por perfil. Testar que um perfil não consegue consultar os registos de outro.
@@ -222,7 +222,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Vida prática
 
-- [ ] Adicionar, remover e marcar como comprados itens numa lista de compras e recuperar a lista na sessão seguinte.
+- [x] Adicionar, remover e marcar como comprados itens numa lista de compras e recuperar a lista na sessão seguinte.
 
 ### Rotinas e fluxos
 
@@ -239,7 +239,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Painel e acessibilidade
 
-- [ ] Mostrar o histórico de conversas e permitir reabrir uma sessão.
+- [x] Mostrar o histórico de conversas e permitir reabrir uma sessão.
 - [ ] Disponibilizar um editor para consultar, editar, apagar e exportar memórias. Depende das operações de memória.
 - [ ] Disponibilizar um editor para configurar, pré-visualizar e executar rotinas. Depende do motor de rotinas.
 
@@ -252,11 +252,18 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Criar cópias de segurança das definições, memórias e rotinas.
 - [ ] Restaurar uma cópia de segurança de teste e verificar que recupera as definições, memórias e rotinas esperadas.
 
+### Validação parcial
+
+- [x] Enviar o pedido combinado pela API local e confirmar o registo da memória, a localização da nota de teste e o agendamento para as 09:00.
+- [x] Reabrir a base local, avançar o relógio de teste e confirmar que a rotina é executada uma vez, com o VS Code simulado.
+- [x] Criar e restaurar uma cópia SQLite de memórias e rotinas num perfil novo. A cópia das restantes definições continua por testar.
+- [x] Validar no Chromium a seleção de uma memória com dados de teste e a pesquisa e reabertura de uma conversa guardada no navegador.
+
 ### Teste de aceitação de memória e rotinas
 
 > «Lembra-te de que o meu projeto principal é o JARVIS. Encontra a nota onde escrevi sobre temporizadores e, amanhã às nove, ativa o modo programação.»
 
-- [ ] Confirmar que a memória apresenta a informação, a data e a origem.
+- [x] Confirmar que a memória apresenta a informação, a data e a origem.
 - [ ] Confirmar que a pesquisa encontra a passagem e permite abrir a nota.
 - [ ] Editar a memória do projeto, reiniciar o JARVIS antes da hora agendada e confirmar que o valor editado continua disponível.
 - [ ] Confirmar que a rotina continua agendada após o reinício, dispara às nove e abre o espaço de trabalho configurado.

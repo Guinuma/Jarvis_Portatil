@@ -51,6 +51,18 @@ Outros pedidos locais:
 
 O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY` ou do ficheiro `.env` do Hermes (em `%LOCALAPPDATA%\hermes` por predefinição). O botão **H.O.L.O Hands** inicia e abre o painel de gestos se o submódulo estiver instalado. O atalho **Iniciar Jarvis.cmd** continua a abrir diretamente esse painel.
 
+## Memórias, histórico e rotinas
+
+Abre **Memórias** para consultar, editar, apagar ou exportar registos. No chat, experimenta «Lembra-te de que o meu projeto principal é o JARVIS» e «Consulta a memória projeto principal». Usa **Histórico de conversas** para pesquisar e reabrir conversas guardadas no navegador. Usa **Nova conversa** para começar outra.
+
+O servidor guarda memórias e horários em `~/.jarvis-portatil/default.sqlite3`. Define `JARVIS_PROFILE` antes de arrancar para carregar outro perfil local. O histórico no navegador usa o mesmo nome de perfil e fica associado ao endereço onde abres o JARVIS.
+
+Em **Rotina de programação**, podes executar a rotina ou agendá-la para amanhã às 09:00. O JARVIS usa a hora local do Windows, guarda o horário e executa a rotina quando o servidor está em funcionamento. A rotina pede ao VS Code que abra a pasta do JARVIS e lista as notas da última sessão.
+
+Para a lista de compras, usa «Adiciona pão à lista de compras», «Marca como comprado pão na lista de compras», «Remove pão da lista de compras» e «Mostra a lista de compras».
+
+Corre `python -m scripts.backup_memory memoria.sqlite3` para copiar o perfil atual. Para restaurar sem substituir um perfil existente, corre `python -m scripts.backup_memory memoria.sqlite3 --restore-to recuperado`. O histórico guardado no navegador fica separado desta cópia.
+
 ## Verificar a base local
 
 Com o Ollama aberto, corre `python -m scripts.check_local --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.
