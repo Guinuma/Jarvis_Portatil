@@ -21,6 +21,10 @@ No Windows, abre **Iniciar Jarvis Normal.cmd** (ou executa `python -m jarvis.app
 
 Carrega em **Ditar** ou prime **Alt+Shift+D** com a janela do JARVIS em foco para iniciar ou parar o ditado. Podes usar o reconhecimento local em português de Portugal, se o navegador tiver suporte e o pacote de idioma estiver disponível. Revê a transcrição antes de carregar em **Enviar**. Para ouvir uma resposta, carrega em **Ouvir resposta**. A leitura usa uma voz portuguesa instalada no Windows e pode ser interrompida em **Parar leitura**. Ativa **Ler respostas automaticamente** para ouvir as frases à medida que chegam. A leitura automática começa desativada. Usa **Voz** para escolher uma voz local em português e **Velocidade** para ajustar o ritmo de leitura. A opção **Automática** dá preferência a português de Portugal.
 
+Durante um pedido, carrega em **Cancelar pedido** ou inicia o ditado e diz «cancela». Para corrigir o último lembrete pendente, dita ou escreve «afinal, daqui a 30 minutos» e envia. A correção substitui o aviso anterior se este ainda estiver pendente.
+
+Usa **Microfone** para escolher uma entrada que o navegador disponibilize. Se a lista ainda estiver vazia, autoriza o microfone no primeiro ditado. **Saída de áudio do Windows** abre as definições de som para escolher os altifalantes ou auscultadores usados na leitura.
+
 Para abrir este repositório no editor, escreve «Jarvis, abre o meu projeto no VS Code». O JARVIS procura o VS Code pelo executável ou pelo atalho `code` do Windows.
 
 Para adicionar outros projetos, define `JARVIS_PROJECTS_FILE` na sessão que arranca o JARVIS com o caminho de um ficheiro JSON como este:

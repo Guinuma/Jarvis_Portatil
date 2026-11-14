@@ -2,6 +2,8 @@
 import argparse
 import json
 import os
+import select
+import socket
 import subprocess
 import sys
 import time
@@ -9,6 +11,7 @@ import webbrowser
 from functools import partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Event, Thread
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -88,6 +91,12 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_content(200, {"url": url})
                 time.sleep(0.1)
             return self.send_content(503, {"error": "O painel H.O.L.O não arrancou. Verifica se a porta está livre."})
+        if self.path == "/audio-settings" and sys.platform == "win32":
+            try:
+                os.startfile("ms-settings:sound")
+            except OSError:
+                return self.send_content(503, {"error": "Não consegui abrir as definições de som."})
+            return self.send_content(200, {"opened": True})
         if self.path != "/chat":
             return self.send_content(404, {"error": "Ação indisponível."})
         try:
@@ -198,17 +207,39 @@ class Handler(BaseHTTPRequestHandler):
         except (URLError, TimeoutError):
             return self.send_content(503, {"error": "O Hermes não respondeu. Confirma que o gateway está a correr."})
 
-        with response:
-            self.send_response(200)
-            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-            try:
-                for line in response:
-                    self.wfile.write(line)
-                    self.wfile.flush()
-            except (TimeoutError, ConnectionError):
-                pass
+        finished = Event()
+
+        def watch_disconnect():
+            while not finished.wait(0.15):
+                try:
+                    readable, _, _ = select.select([self.connection], [], [], 0)
+                    if readable and not self.connection.recv(1, socket.MSG_PEEK):
+                        # Shutdown the upstream socket to wake a blocked stream read.
+                        raw = response.fp
+                        if raw is not None:
+                            raw.raw._sock.shutdown(socket.SHUT_RDWR)
+                        return
+                except (AttributeError, OSError, ValueError):
+                    return
+
+        Thread(target=watch_disconnect, daemon=True).start()
+        try:
+            self.stream_response(response)
+        finally:
+            finished.set()
+            response.close()
+
+    def stream_response(self, response):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        try:
+            for line in response:
+                self.wfile.write(line)
+                self.wfile.flush()
+        except (TimeoutError, ConnectionError):
+            pass
 
 
 def main():

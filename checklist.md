@@ -70,12 +70,15 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [x] Enfileirar frases para leitura automática à medida que o Hermes envia a resposta. Validado com síntese simulada.
 - [x] Cancelar a fila de leitura e bloquear a leitura das frases seguintes da resposta em curso. Validado com síntese simulada.
 - [ ] Interromper a voz a meio de uma frase e confirmar que o áudio para imediatamente, incluindo o que já estava em fila.
-- [ ] Reconhecer «cancela» durante uma operação e confirmar que o pedido pendente é cancelado. Depende da transcrição e do cancelamento da operação.
-- [ ] Corrigir um pedido com uma instrução como «afinal, daqui a 30 minutos» sem reiniciar a conversa. Confirmar que fica apenas o lembrete corrigido. Depende do contexto e da edição de lembretes.
+- [x] Reconhecer «cancela» durante um pedido e fechar a ligação ao Hermes. Validado com reconhecimento simulado e um servidor de teste.
+- [ ] Confirmar com voz real que «cancela» interrompe um pedido em curso no Hermes.
+- [x] Corrigir o último lembrete pendente com «afinal, daqui a 30 minutos» sem reiniciar a conversa. No Chromium disparou só o aviso corrigido.
 - [x] Alterar a voz local de leitura e confirmar a mudança na resposta seguinte com síntese simulada.
 - [x] Alterar a velocidade da leitura e confirmar a mudança na resposta seguinte com síntese simulada.
-- [ ] Escolher o microfone e verificar que o áudio é captado pelo dispositivo selecionado.
-- [ ] Escolher a saída de áudio e verificar que a resposta é reproduzida no dispositivo selecionado.
+- [x] Permitir selecionar um microfone e passar a faixa selecionada ao reconhecimento local. Validado no Chromium com um dispositivo simulado.
+- [ ] Confirmar a captura com o microfone físico selecionado.
+- [x] Abrir as definições de som do Windows a partir do JARVIS para escolher a saída de áudio.
+- [ ] Confirmar que a voz é reproduzida na saída selecionada no Windows.
 - [x] Desativar **Ler respostas automaticamente** e receber a resposta por texto.
 
 ### Conversa

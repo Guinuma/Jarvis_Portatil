@@ -50,6 +50,9 @@ form{display:flex;gap:8px}#prompt{width:100%;min-width:0;color:var(--text);backg
         <option value="1" selected>Normal</option>
         <option value="1.2">Rápida</option>
       </select></label>
+      <button type="button" id="cancel-request" hidden>Cancelar pedido</button>
+      <label>Microfone <select id="microphone"><option value="">Predefinido</option></select></label>
+      <button type="button" id="audio-settings">Saída de áudio do Windows</button>
       <span id="voice-status" role="status"></span>
     </div>
     <div id="reminders" role="log" aria-label="Avisos de lembretes"></div>
@@ -76,7 +79,51 @@ const dictate = document.querySelector('#dictate');
 const stopSpeech = document.querySelector('#stop-speech');
 const voiceStatus = document.querySelector('#voice-status');
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const microphone = document.querySelector('#microphone');
+const cancelRequest = document.querySelector('#cancel-request');
 let recognition;
+let requestController;
+let capture;
+let pendingReminder;
+
+cancelRequest.addEventListener('click', () => requestController?.abort());
+
+async function refreshMicrophones() {
+  const devices = await navigator.mediaDevices?.enumerateDevices();
+  if (!devices) return;
+  const selected = microphone.value;
+  microphone.replaceChildren(new Option('Predefinido', ''));
+  for (const device of devices) {
+    if (device.kind === 'audioinput' && device.deviceId && device.deviceId !== 'default') {
+      microphone.add(new Option(device.label || 'Microfone ' + microphone.options.length, device.deviceId));
+    }
+  }
+  if ([...microphone.options].some(option => option.value === selected)) microphone.value = selected;
+}
+refreshMicrophones().catch(() => {});
+navigator.mediaDevices?.addEventListener('devicechange', () => refreshMicrophones().catch(() => {}));
+
+document.querySelector('#audio-settings').addEventListener('click', async () => {
+  try {
+    const response = await fetch('/audio-settings', {method:'POST', headers, body:'{}'});
+    if (!response.ok) throw new Error();
+    voiceStatus.textContent = 'Escolhe a saída em Sistema > Som no Windows.';
+  } catch {
+    voiceStatus.textContent = 'Abre as definições de som do Windows para escolher a saída.';
+  }
+});
+
+function scheduleReminder({label, due}) {
+  const entry = {label};
+  entry.timer = window.setTimeout(() => {
+    if (pendingReminder === entry) pendingReminder = undefined;
+    const reminder = document.createElement('p');
+    reminder.textContent = 'Lembrete: ' + label;
+    document.querySelector('#reminders').append(reminder);
+    if (autoRead.checked && !recognition) queueSpeech(reminder.textContent);
+  }, Math.max(0, due * 1000 - Date.now()));
+  pendingReminder = entry;
+}
 const autoRead = document.querySelector('#auto-read');
 const speechVoice = document.querySelector('#speech-voice');
 const speechRate = document.querySelector('#speech-rate');
@@ -154,7 +201,7 @@ function readAloud(text) {
 }
 
 function readStreamedText(session, text, complete = false) {
-  if (!session || session !== streamedSpeech) return;
+  if (!session || session !== streamedSpeech || recognition) return;
   session.pending += text;
   const parts = session.pending.split(/(?<=[.!?…])\s+/);
   session.pending = parts.pop();
@@ -189,10 +236,12 @@ dictate.addEventListener('click', async () => {
   send.disabled = true;
   voiceStatus.textContent = 'A verificar o ditado local…';
   function finish() {
+    capture?.getTracks().forEach(track => track.stop());
+    capture = undefined;
     recognition = undefined;
     dictate.textContent = 'Ditar';
     dictate.disabled = false;
-    send.disabled = false;
+    send.disabled = Boolean(requestController);
     input.focus();
   }
   try {
@@ -220,9 +269,17 @@ dictate.addEventListener('click', async () => {
       voiceStatus.textContent = 'A ouvir…';
     };
     session.onresult = event => {
+      if (recognition !== session) return;
       const result = event.results[0];
       input.value = result[0].transcript.trim().slice(0, input.maxLength);
       final = result.isFinal;
+      if (final && requestController && /^cancela[.!?]?$/i.test(input.value)) {
+        input.value = originalDraft;
+        requestController.abort();
+        finish();
+        session.abort();
+        return;
+      }
       if (final) voiceStatus.textContent = 'Revê a transcrição antes de enviar.';
     };
     session.onerror = event => {
@@ -241,9 +298,15 @@ dictate.addEventListener('click', async () => {
       }
       finish();
     };
-    session.start();
+    if (microphone.value) {
+      capture = await navigator.mediaDevices.getUserMedia({audio:{deviceId:{exact:microphone.value}}});
+      session.start(capture.getAudioTracks()[0]);
+    } else {
+      session.start();
+    }
+    refreshMicrophones().catch(() => {});
   } catch {
-    voiceStatus.textContent = 'Não foi possível iniciar o ditado local.';
+    voiceStatus.textContent = 'Não foi possível iniciar o ditado. Verifica a permissão e o microfone selecionado.';
     finish();
   }
 });
@@ -317,7 +380,6 @@ form.addEventListener('submit', async event => {
   const content = input.value.trim();
   if (!content || send.disabled) return;
   interruptSpeech();
-  dictate.disabled = true;
   send.disabled = true;
   notice.textContent = '';
   input.value = '';
@@ -330,23 +392,27 @@ form.addEventListener('submit', async event => {
   const speech = autoRead.checked ? {pending: ""} : undefined;
   streamedSpeech = speech;
   const answer = bubble('assistant', 'A aguardar resposta…');
+  const correction = /^afinal,?\s+(daqui a .+?)[.!?]?$/i.exec(content);
+  const previous = correction ? pendingReminder : undefined;
+  const controller = new AbortController();
+  requestController = controller;
+  cancelRequest.hidden = false;
   try {
+    if (correction && !previous) throw new Error('Não há um lembrete pendente para corrigir.');
+    const outgoing = previous ? {...user, content: 'Lembra-me ' + correction[1] + ' de ' + previous.label} : user;
     const response = await fetch('/chat', {
+      signal: controller.signal,
       method: 'POST', headers,
-      body: JSON.stringify({messages: [...history.slice(-8), user]}),
+      body: JSON.stringify({messages: [...history.slice(-8), outgoing]}),
     });
     if (!response.ok) throw new Error((await response.json()).error);
     const local = response.headers.get('Content-Type')?.startsWith('application/json');
     const result = local ? await response.json() : null;
     const reply = local ? result.reply : await readReply(response, answer, speech);
     if (result?.reminder) {
-      const {label, due} = result.reminder;
-      window.setTimeout(() => {
-        const reminder = document.createElement('p');
-        reminder.textContent = 'Lembrete: ' + label;
-        document.querySelector('#reminders').append(reminder);
-        if (autoRead.checked) queueSpeech(reminder.textContent);
-      }, Math.max(0, due * 1000 - Date.now()));
+      if (previous && pendingReminder !== previous) throw new Error('O lembrete anterior já disparou.');
+      if (previous) window.clearTimeout(previous.timer);
+      scheduleReminder(result.reminder);
     }
     if (local) {
       answer.textContent = reply;
@@ -359,19 +425,22 @@ form.addEventListener('submit', async event => {
       const listen = document.createElement('button');
       listen.type = 'button';
       listen.textContent = 'Ouvir resposta';
-      listen.addEventListener('click', () => readAloud(reply));
+      listen.addEventListener('click', () => {
+        if (!recognition) readAloud(reply);
+      });
       answer.after(listen);
       messages.scrollTop = messages.scrollHeight;
     }
   } catch (error) {
     if (speech && speech === streamedSpeech) interruptSpeech();
     if (answer.textContent === 'A aguardar resposta…') answer.remove();
-    notice.textContent = error.message || 'Não foi possível completar o pedido.';
+    notice.textContent = controller.signal.aborted ? 'Pedido cancelado.' : (error.message || 'Não foi possível completar o pedido.');
     status.textContent = 'Pedido interrompido';
   } finally {
     delete document.body.dataset.busy;
-    dictate.disabled = false;
-    send.disabled = false;
+    requestController = undefined;
+    cancelRequest.hidden = true;
+    send.disabled = Boolean(recognition) || dictate.disabled;
     input.focus();
   }
 });
