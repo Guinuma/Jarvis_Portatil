@@ -25,10 +25,8 @@ def programming_project(memory, root):
 
 
 def run_programming(root):
-    open_project(root)
     session, paths = latest_notes(root)
-    for path in paths:
-        open_project(root, target=root / path)
+    open_project(root, files=[root / path for path in paths])
     return {"projeto": str(root), "sessão": session.isoformat() if session else None, "notas": paths}
 
 

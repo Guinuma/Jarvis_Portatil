@@ -76,7 +76,7 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
     </details>
     <details id="routine-panel">
       <summary>Rotina de programação</summary>
-      <p>Abre a pasta JARVIS no VS Code e procura as notas da última sessão.</p>
+      <ol id="routine-preview" aria-label="Passos previstos"></ol>
       <button type="button" data-routine="Ativa o modo programação">Executar agora</button>
       <button type="button" data-routine="Amanhã às nove, ativa o modo programação">Agendar para amanhã às 09:00</button>
       <form id="routine-editor">
@@ -569,6 +569,12 @@ const memorySelect = document.querySelector('#memory-record');
 const memoryFeedback = document.querySelector('#memory-feedback');
 let records = [];
 
+function describeRoutineResult(result) {
+  if (result.erro) return result.erro;
+  if (result.resposta) return result.rotina + ' · ' + result.resposta;
+  return ['Pedido ao VS Code: ' + result.projeto, ...(result.notas || [])].join(' · ');
+}
+
 async function memoryAction(action) {
   const data = Object.fromEntries(new FormData(memoryForm));
   try {
@@ -578,12 +584,19 @@ async function memoryAction(action) {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error);
     records = result.records;
+    const preview = document.querySelector('#routine-preview');
+    preview.replaceChildren();
+    for (const step of result.routine_preview || []) {
+      const row = document.createElement('li');
+      row.textContent = step;
+      preview.append(row);
+    }
     const routineHistory = document.querySelector('#routine-history');
     routineHistory.replaceChildren();
     for (const routine of result.routines) {
       const row = document.createElement('li');
       row.textContent = new Date((routine.finished || routine.due) * 1000).toLocaleString('pt-PT') + ' · ' + routine.status +
-        (routine.result ? ' · ' + routine.result : '');
+        (routine.result ? ' · ' + describeRoutineResult(JSON.parse(routine.result)) : '');
       routineHistory.append(row);
     }
     memorySelect.replaceChildren(new Option('Nova memória', ''));

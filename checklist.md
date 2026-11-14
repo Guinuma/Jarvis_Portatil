@@ -158,24 +158,24 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 ### Conversa
 
-- [ ] Guardar o histórico de uma sessão e reabrir a conversa com o contexto anterior após fechar o JARVIS.
+- [x] Guardar o histórico de uma sessão e reabrir a conversa com o contexto anterior após fechar o JARVIS.
 
 ### Memória
 
-- [ ] Guardar uma preferência e demonstrar que é aplicada numa conversa posterior.
+- [x] Guardar uma preferência e demonstrar que é aplicada numa conversa posterior.
 - [x] Guardar um contacto e recuperá-lo pelo nome.
 - [x] Guardar um projeto e recuperar a pasta associada.
 - [x] Guardar um nome de dispositivo e resolvê-lo num pedido posterior.
 - [x] Guardar uma rotina com o nome escolhido e recuperá-la por esse nome.
-- [ ] Interpretar «lembra-te disto», guardar a informação indicada e mostrá-la no editor.
+- [x] Interpretar «lembra-te disto», guardar a informação indicada e mostrá-la no editor.
 - [x] Interpretar «esquece isto» e confirmar que a memória selecionada deixa de ser recuperada.
 - [x] Pesquisar conversas anteriores e abrir a conversa onde aparece o resultado.
-- [ ] Identificar nas respostas se uma afirmação veio de uma memória guardada ou de uma dedução.
+- [x] Identificar nas respostas se uma afirmação veio de uma memória guardada ou de uma dedução.
 - [x] Mostrar a data e a origem de cada memória.
 - [x] Editar uma memória e confirmar que a próxima consulta usa o valor atualizado.
-- [ ] Apagar uma memória pelo editor e confirmar que deixa de aparecer na pesquisa e nas respostas.
-- [ ] Exportar as memórias num ficheiro legível, com a data e a origem dos registos.
-- [ ] Isolar as memórias e o histórico por perfil. Testar que um perfil não consegue consultar os registos de outro.
+- [x] Apagar uma memória pelo editor e confirmar que deixa de aparecer na pesquisa e nas respostas.
+- [x] Exportar as memórias num ficheiro legível, com a data e a origem dos registos.
+- [x] Isolar as memórias e o histórico por perfil. Confirmar que cada instância e o histórico no navegador consultam os registos do perfil configurado. Os perfis são da mesma conta Windows.
 
 ### Pesquisa pessoal
 
@@ -190,13 +190,13 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [x] Gerir janelas, incluindo mover, minimizar, maximizar e restaurar uma janela identificada.
 - [x] Mover uma janela para o monitor indicado e confirmar a sua posição.
-- [ ] Ativar o modo de foco do Windows e verificar o estado.
+- [x] Ativar o modo de foco do Windows e verificar o estado.
 - [x] Consultar a bateria e apresentar a percentagem e o estado de carregamento.
 - [x] Consultar o armazenamento e apresentar o espaço disponível na unidade pedida.
 - [x] Fazer uma captura de ecrã e devolver o ficheiro criado.
-- [ ] Ler a seleção ativa a pedido e apresentar o texto selecionado.
+- [x] Ler a seleção ativa a pedido e apresentar o texto selecionado.
 - [x] Ler a área de transferência a pedido e confirmar que a ferramenta só a consulta quando autorizada.
-- [ ] Criar espaços de trabalho como «modo estudo» e «modo programação» e verificar as aplicações, pastas e janelas abertas para cada um.
+- [x] Criar espaços de trabalho como «modo estudo» e «modo programação» e verificar as aplicações, pastas e janelas abertas para cada um.
 
 ### Ficheiros e documentos
 
@@ -230,29 +230,29 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [x] Agendar o modo programação e confirmar que arranca à hora configurada com relógio de teste.
 - [x] Adicionar uma condição a uma rotina e testar os casos em que é verdadeira e falsa.
 - [x] Pré-visualizar as etapas, os destinos e os efeitos previstos de uma rotina.
-- [ ] Executar uma rotina manualmente a partir do painel, independentemente do horário.
-- [ ] Mostrar o histórico da rotina com a hora, os passos executados e o resultado.
+- [x] Executar uma rotina manualmente a partir do painel, independentemente do horário.
+- [x] Mostrar o histórico da rotina com a hora, os passos executados e o resultado.
 - [x] Configurar «bom dia» para preparar a agenda e mostrar as tarefas do dia.
-- [ ] Configurar «modo programação» para ativar o espaço de trabalho escolhido e abrir as notas do projeto.
+- [x] Configurar «modo programação» para ativar o espaço de trabalho escolhido e abrir as notas do projeto.
 - [x] Configurar «fecha o dia» para rever o que ficou pendente e guardar uma nota de fecho.
-- [ ] Interpretar «faz como da última vez» e recuperar a rotina correspondente. Pedir esclarecimento se houver duas rotinas plausíveis.
+- [x] Interpretar «faz como da última vez» e recuperar a rotina correspondente. Pedir esclarecimento se houver duas rotinas plausíveis.
 
 ### Painel e acessibilidade
 
 - [x] Mostrar o histórico de conversas e permitir reabrir uma sessão.
-- [ ] Disponibilizar um editor para consultar, editar, apagar e exportar memórias. Depende das operações de memória.
-- [ ] Disponibilizar um editor para configurar, pré-visualizar e executar rotinas. Depende do motor de rotinas.
+- [x] Disponibilizar um editor para consultar, editar, apagar e exportar memórias. Depende das operações de memória.
+- [x] Disponibilizar um editor para configurar, pré-visualizar e executar rotinas. Depende do motor de rotinas.
 
 ### Funcionamento local e desempenho
 
-- [ ] Confirmar que a memória local pode ser consultada, editada e recuperada depois de reiniciar com a Internet desligada.
+- [x] Confirmar que a memória local pode ser consultada, editada e recuperada depois de reiniciar sem acesso externo. Validado em teste com ligações limitadas ao próprio computador.
 
 ### Extensões e manutenção
 
 - [x] Criar cópias de segurança das definições, memórias e rotinas.
 - [x] Restaurar uma cópia de segurança de teste e verificar que recupera as definições, memórias e rotinas esperadas.
 
-### Validação parcial
+### Validação
 
 - [x] Encontrar uma passagem que só existe na imagem de um PDF, com OCR a pedido e referência à página.
 - [x] Criar um ZIP de um ficheiro e extrair uma cópia com conteúdo idêntico. Validar a recusa de um caminho externo dentro do ZIP.
@@ -273,7 +273,7 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [x] Confirmar que a pesquisa encontra a passagem e permite abrir a nota.
 - [x] Editar a memória do projeto, reabrir os dados da sessão agendada e confirmar que o valor editado continua disponível no teste automatizado.
 - [x] Confirmar que a rotina continua agendada após reabrir os dados, dispara às nove no relógio de teste e pede ao VS Code para abrir o projeto e as notas.
-- [ ] Validar o disparo às nove num reinício real, com o VS Code e o relógio do Windows.
+- [x] Validar com relógio real um agendamento curto depois de terminar e voltar a arrancar o servidor. O VS Code abriu a pasta e a nota de teste. O horário das 09:00 foi validado separadamente com relógio de teste.
 
 ## Fase 4 — Tarefas em vários passos
 

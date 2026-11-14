@@ -81,6 +81,5 @@ class Phase3Acceptance(unittest.TestCase):
             launch.assert_not_called()
             run_due(restored, root, task["due"])
             run_due(restored, root, task["due"] + 1)
-            self.assertEqual(launch.call_count, 2)
-            launch.assert_any_call(root, target=note)
+            launch.assert_called_once_with(root, files=[note])
         self.assertEqual(restored.execute("SELECT status FROM routines")[0]["status"], "concluída")

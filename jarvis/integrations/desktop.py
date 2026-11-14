@@ -1,10 +1,12 @@
 """Consultas locais ao estado do Windows."""
 import ctypes
+import os
 from ctypes import wintypes
 import re
 import shutil
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 from .editor import normalize
 from .project_files import safe_path
@@ -20,6 +22,17 @@ class PowerStatus(ctypes.Structure):
 
 def desktop_query(text, root):
     command = normalize(text).rstrip(".!?")
+    focus = {
+        "ativa o modo de foco": "focus-start",
+        "desativa o modo de foco": "focus-stop",
+        "consulta o modo de foco": "focus-status",
+    }.get(command)
+    if focus:
+        state = accessibility(focus)
+        return "Concentração do Windows ativa." if state == "active" else "Concentração do Windows inativa."
+    selection = re.fullmatch(r'lê a seleção da janela "([^"]+)"[.!]?', text, re.I)
+    if selection:
+        return accessibility("selection", selection[1]) or "A janela não expôs texto selecionado."
     if command == "mostra os monitores":
         return "\n".join(
             f"Monitor {number}: {x}, {y}"
@@ -118,3 +131,15 @@ def monitor_positions(user32):
     if not user32.EnumDisplayMonitors(None, None, collect, 0):
         raise OSError("Não consegui enumerar os monitores.")
     return sorted(positions, key=lambda position: (position != (0, 0), position))
+
+def accessibility(action, title=""):
+    process = subprocess.run(
+        ["powershell.exe", "-NoProfile", "-NonInteractive", "-File",
+         str(Path(__file__).with_name("windows_accessibility.ps1")), action],
+        env={**os.environ, "JARVIS_WINDOW_TITLE": title},
+        capture_output=True, encoding="utf-8", errors="replace", timeout=15,
+        creationflags=subprocess.CREATE_NO_WINDOW,
+    )
+    if process.returncode:
+        raise OSError("Não consegui confirmar o comando de acessibilidade do Windows.")
+    return process.stdout.strip()[:4000]

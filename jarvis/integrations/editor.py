@@ -60,7 +60,7 @@ def resolve_project(name, root):
     return [(label, path) for path, label in matches.items()]
 
 
-def open_project(folder, *, target=None):
+def open_project(folder, *, target=None, files=()):
     if not folder.is_dir():
         raise NotADirectoryError("A pasta autorizada deste projeto está indisponível.")
     editor = shutil.which("Code.exe")
@@ -70,4 +70,4 @@ def open_project(folder, *, target=None):
             editor = str(candidate)
     if not editor:
         raise FileNotFoundError("Instala o VS Code e adiciona o comando code ao PATH.")
-    subprocess.Popen([editor, str(target or folder)], cwd=folder)
+    subprocess.Popen([editor, str(target or folder), *(str(path) for path in files)], cwd=folder)

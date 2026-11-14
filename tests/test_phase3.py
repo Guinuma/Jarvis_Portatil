@@ -40,9 +40,7 @@ class Phase3Test(unittest.TestCase):
                 launch.assert_not_called()
                 run_due(reopened, root, when.timestamp())
                 run_due(reopened, root, when.timestamp() + 1)
-                self.assertEqual(launch.call_count, 2)
-                launch.assert_any_call(root)
-                launch.assert_any_call(root, target=notes / "sessao.md")
+                launch.assert_called_once_with(root, files=[notes / "sessao.md"])
             entry = reopened.execute("SELECT * FROM routines")[0]
             self.assertEqual(entry["status"], "concluída")
             self.assertEqual(json.loads(entry["result"])["notas"], ["notes/2026-11-14/sessao.md"])

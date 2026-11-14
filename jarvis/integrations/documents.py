@@ -46,6 +46,7 @@ def pdf_command(text, root, memory=None, sources=None):
         return f"Resumo por excertos de {path.relative_to(root)}:\n" + "\n".join(excerpts)
 
     ocr = bool(match and match[1])
+    ocr_options = []
     if ocr:
         renderer = shutil.which("pdftoppm")
         executable = shutil.which("tesseract")
@@ -54,6 +55,9 @@ def pdf_command(text, root, memory=None, sources=None):
             executable = str(installed)
         if not renderer or not executable:
             raise ValueError("Para usar OCR, instala Poppler (pdftoppm) e Tesseract.")
+        language_dir = Path(os.environ.get("JARVIS_TESSDATA_DIR") or Path.home() / ".jarvis-portatil" / "ocr")
+        if (language_dir / "por.traineddata").is_file():
+            ocr_options = ["--tessdata-dir", str(language_dir), "-l", "por"]
     query = (question[1] if question else match[2]).strip().strip('"').casefold()
     if not query:
         raise ValueError("Indica o texto a pesquisar.")
@@ -75,7 +79,7 @@ def pdf_command(text, root, memory=None, sources=None):
             seen.add(key)
             try:
                 stat = path.stat()
-                stamp = f"{stat.st_mtime_ns}:{stat.st_size}"
+                stamp = f"{stat.st_mtime_ns}:{stat.st_size}:{ocr_options}"
                 cached = indexed.get(key)
                 if cached and cached["stamp"] == stamp:
                     pages = json.loads(cached["pages"])
@@ -85,7 +89,7 @@ def pdf_command(text, root, memory=None, sources=None):
                         for number, page in enumerate(PdfReader(stream).pages, 1):
                             raw = page.extract_text() or ""
                             if ocr and not raw.strip() and number <= 20:
-                                raw = scan_page(path, number, renderer, executable)
+                                raw = scan_page(path, number, renderer, executable, ocr_options)
                             pages.append(" ".join(raw.split()))
                     if memory:
                         memory.execute(
@@ -115,7 +119,7 @@ def pdf_command(text, root, memory=None, sources=None):
     return reply
 
 
-def scan_page(path, number, renderer, executable):
+def scan_page(path, number, renderer, executable, ocr_options):
     with tempfile.TemporaryDirectory() as temporary:
         image = Path(temporary) / "page"
         subprocess.run(
@@ -124,7 +128,7 @@ def scan_page(path, number, renderer, executable):
             check=True, capture_output=True, timeout=20,
         )
         result = subprocess.run(
-            [executable, str(image.with_suffix(".png")), "stdout"],
+            [executable, str(image.with_suffix(".png")), "stdout", *ocr_options],
             check=True, capture_output=True, encoding="utf-8", timeout=20,
         )
         return result.stdout

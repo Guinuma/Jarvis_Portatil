@@ -53,7 +53,7 @@ O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY
 
 ## Memórias, histórico e rotinas
 
-Abre **Memórias** para consultar, editar, apagar ou exportar registos. No chat, experimenta «Lembra-te de que o meu projeto principal é o JARVIS» e «Consulta a memória projeto principal». Usa **Histórico de conversas** para pesquisar e reabrir conversas guardadas no navegador. Usa **Nova conversa** para começar outra.
+Abre **Memórias** para consultar, editar, apagar ou exportar registos. No chat, experimenta «Lembra-te de que o meu projeto principal é o JARVIS» e «Consulta a memória projeto principal». Usa **Histórico de conversas** para pesquisar e reabrir conversas guardadas no navegador. Usa **Nova conversa** para começar outra. Apagar uma memória remove-a do editor e de novas consultas. As conversas anteriores continuam a mostrar o texto que lhes foi enviado.
 
 O servidor guarda memórias e horários em `~/.jarvis-portatil/default.sqlite3`. Define `JARVIS_PROFILE` antes de arrancar para carregar outro perfil local. O histórico no navegador usa o mesmo nome de perfil e fica associado ao endereço onde abres o JARVIS.
 
@@ -67,12 +67,12 @@ Para organizar ficheiros dentro do projeto, usa `Renomeia "rascunho.txt" para "n
 
 ### Comandos da Fase 3
 
-- **PDFs:** «Procura nos PDFs temporizadores», «Procura nos PDFs com OCR temporizadores» e `Resume o PDF "notas.pdf"`. Instala `pypdf` para pesquisar e resumir PDFs. Para OCR, instala também Poppler com `pdftoppm` e Tesseract. A pesquisa mostra ligações por página e atualiza o índice ao consultar os ficheiros. O OCR a pedido cobre páginas sem texto dentro das primeiras 20 páginas de cada PDF.
+- **PDFs:** «Procura nos PDFs temporizadores», «Procura nos PDFs com OCR temporizadores» e `Resume o PDF "notas.pdf"`. Instala `pypdf` para pesquisar e resumir PDFs. Para OCR, instala também Poppler com `pdftoppm` e Tesseract. A pesquisa mostra ligações por página e atualiza o índice ao consultar os ficheiros. O OCR a pedido cobre páginas sem texto dentro das primeiras 20 páginas de cada PDF. Para reconhecer português, guarda [por.traineddata](https://github.com/tesseract-ocr/tessdata_fast/blob/main/por.traineddata) em `~/.jarvis-portatil/ocr/` ou aponta `JARVIS_TESSDATA_DIR` para a pasta que contém o ficheiro.
 - **Agenda local:** `Cria um evento "Reunião" em 2026-11-15 10:00 por 30 minutos`, «Mostra a agenda de amanhã», «Reagenda o evento 1 para 2026-11-15 11:00» e «Avisa-me 10 minutos antes do evento 1». Mantém o chat aberto para receber os avisos.
 - **Rotinas:** «Bom dia» mostra a agenda e as tarefas. «Fecha o dia» guarda uma nota com as tarefas. `Quando aparecer "pronto.txt" e existir "ok.txt", ativa o modo programação` guarda uma regra que executa uma vez enquanto o servidor estiver aberto.
 - **Ficheiros:** `Comprime "nota.txt" para "nota.zip"`, `Extrai "nota.zip" para "extraido"`, `Copia "nota.txt" para "backup.txt"` e `Converte "nota.txt" para "nota.md"`.
 - **Downloads:** «Previsualiza a organização de Downloads» mostra um plano. Revê-o e usa «Aprova o plano de Downloads 1» com o número recebido. Para testar noutra pasta, define `JARVIS_DOWNLOADS_DIR` antes de arrancar.
-- **Windows:** «Consulta a bateria», «Consulta o armazenamento da unidade C», «Faz uma captura de ecrã», «Mostra os monitores» e `Move a janela "Calculadora" para o monitor 2`. As capturas são guardadas na pasta `capturas/` do projeto e requerem Pillow.
+- **Windows:** «Consulta a bateria», «Consulta o armazenamento da unidade C», «Faz uma captura de ecrã», «Mostra os monitores» e `Move a janela "Calculadora" para o monitor 2`. As capturas são guardadas na pasta `capturas/` do projeto e requerem Pillow. Usa «Ativa o modo de foco» ou «Consulta o modo de foco» para controlar a sessão de concentração. Usa `Lê a seleção da janela "título"` numa aplicação que exponha a seleção à acessibilidade do Windows.
 
 ## Verificar a base local
 
