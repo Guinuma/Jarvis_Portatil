@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from jarvis_files_mcp import respond
+from jarvis.integrations.files_mcp import respond
 
 
 class FileToolTest(unittest.TestCase):
@@ -56,6 +56,6 @@ class FileToolTest(unittest.TestCase):
             "name": "listar_ficheiros", "arguments": {"pasta": "."},
         }}
         self.assertFalse(respond(request, self.root, user="alice", policy=policy)["result"]["isError"])
-        with patch("jarvis_files_mcp.list_files") as read:
+        with patch("jarvis.integrations.files_mcp.list_files") as read:
             self.assertTrue(respond(request, self.root, user="bob", policy=policy)["result"]["isError"])
             read.assert_not_called()

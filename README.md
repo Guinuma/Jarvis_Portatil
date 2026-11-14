@@ -4,9 +4,20 @@ Assistente de voz local no Windows com uma interface controlada por gestos da we
 
 Vê o [checklist de desenvolvimento](checklist.md) para acompanhar as cinco fases do projeto.
 
+## Estrutura do repositório
+
+- `jarvis/` contém a aplicação normal e o servidor do painel de gestos.
+- `jarvis/ui/` contém a interface de chat e o código que liga as notas do H.O.L.O ao Ollama.
+- `jarvis/integrations/` contém a ferramenta MCP de listagem de ficheiros.
+- `scripts/` contém o diagnóstico, a comparação de modelos e o teste de aceitação da Fase 1. Executa os comandos com `python -m` a partir da raiz do repositório.
+- `tests/` contém os testes automatizados. Corre `python -m unittest discover -v`.
+- `holo/` é o submódulo H.O.L.O Hands.
+
+Os dois atalhos Windows estão na raiz. O ficheiro `jarvis_files_mcp.py` na raiz mantém o caminho usado pelas instalações do Hermes já configuradas.
+
 ## Abrir a aplicação JARVIS
 
-No Windows, abre **Iniciar Jarvis Normal.cmd** (ou executa `python jarvis_app.py --open`). O chat abre no navegador em `http://127.0.0.1:4889`. Com o gateway do Hermes local a correr, escreve «Que ficheiros tenho na pasta autorizada?». A atividade mostra as chamadas de ferramentas emitidas pelo Hermes durante o pedido.
+No Windows, abre **Iniciar Jarvis Normal.cmd** (ou executa `python -m jarvis.app --open`). O chat abre no navegador em `http://127.0.0.1:4889`. Com o gateway do Hermes local a correr, escreve «Que ficheiros tenho na pasta autorizada?». A atividade mostra as chamadas de ferramentas emitidas pelo Hermes durante o pedido.
 
 Carrega em **Ditar** para usar o reconhecimento local em português de Portugal, se o navegador tiver suporte e o pacote de idioma estiver disponível. Revê a transcrição antes de carregar em **Enviar**. Para ouvir uma resposta, carrega em **Ouvir resposta**. A leitura usa uma voz portuguesa instalada no Windows e pode ser interrompida em **Parar leitura**.
 
@@ -14,11 +25,11 @@ O servidor local lê a chave da API do Hermes a partir de `JARVIS_HERMES_API_KEY
 
 ## Verificar a base local
 
-Com o Ollama aberto, corre `python check_local.py --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.
+Com o Ollama aberto, corre `python -m scripts.check_local --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.
 
-Para testar também o Hermes Agent, configura-o para usar o mesmo modelo no Ollama em `http://127.0.0.1:11434/v1`. Ativa a API do Hermes em `127.0.0.1:8642`, define a chave `API_SERVER_KEY` na configuração do Hermes e arranca com `hermes gateway`. Na sessão do PowerShell onde vais correr o diagnóstico, define `JARVIS_HERMES_API_KEY` com a mesma chave e corre `python check_local.py`.
+Para testar também o Hermes Agent, configura-o para usar o mesmo modelo no Ollama em `http://127.0.0.1:11434/v1`. Ativa a API do Hermes em `127.0.0.1:8642`, define a chave `API_SERVER_KEY` na configuração do Hermes e arranca com `hermes gateway`. Na sessão do PowerShell onde vais correr o diagnóstico, define `JARVIS_HERMES_API_KEY` com a mesma chave e corre `python -m scripts.check_local`.
 
-O teste envia uma pergunta curta em português e verifica a hora na resposta. Depois de configurar a ferramenta de leitura, corre `python check_local.py --check-files` para confirmar que o Hermes emite um evento de conclusão para a listagem. O diagnóstico também pode ler a chave do ficheiro local do Hermes. A opção `--model` só verifica o modelo no Ollama. A escolha do modelo usado pelo agente é feita na configuração do Hermes. A execução efetiva de ferramentas ainda faz parte da base técnica em desenvolvimento.
+O teste envia uma pergunta curta em português e verifica a hora na resposta. Depois de configurar a ferramenta de leitura, corre `python -m scripts.check_local --check-files` para confirmar que o Hermes emite um evento de conclusão para a listagem. O diagnóstico também pode ler a chave do ficheiro local do Hermes. A opção `--model` só verifica o modelo no Ollama. A escolha do modelo usado pelo agente é feita na configuração do Hermes. A execução efetiva de ferramentas ainda faz parte da base técnica em desenvolvimento.
 
 [Configuração do Ollama no Hermes Agent](https://hermes-agent.nousresearch.com/docs/guides/local-ollama-setup) · [API local do Hermes Agent](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)
 
@@ -31,7 +42,7 @@ mcp_servers:
   jarvis_files:
     command: C:/caminho/python.exe
     args:
-      - C:/caminho/Jarvis_Portatil/jarvis_files_mcp.py
+      - C:/caminho/Jarvis_Portatil/jarvis/integrations/files_mcp.py
       - C:/caminho/Jarvis_Portatil/holo/sample-notes
 platform_toolsets:
   api_server: [jarvis_files]
@@ -41,7 +52,7 @@ Reinicia o gateway e pede «Que ficheiros tenho na pasta autorizada?». A ferram
 
 Para verificar a Fase 1 de ponta a ponta, configura também os argumentos `--policy caminho/permissoes.json` e `--audit caminho/auditoria.jsonl` no servidor MCP. O JSON de permissões mapeia o nome da conta local que executa o gateway para as ferramentas autorizadas, por exemplo `{"conta-windows":["listar_ficheiros"]}`. A política é relida a cada chamada. A API do Hermes serve uma única conta local nesta fase. Usa as notas de exemplo como raiz e um ficheiro de auditoria fora da raiz.
 
-Corre `python verify_phase1.py --policy caminho/permissoes.json --audit caminho/auditoria.jsonl` sem outros pedidos em curso. O teste retira temporariamente a permissão, verifica a recusa e repõe a política no final. Para o teste de serviço parado, usa a opção `--offline` com o Ollama desligado e volta a abri-lo depois.
+Corre `python -m scripts.verify_phase1 --policy caminho/permissoes.json --audit caminho/auditoria.jsonl` sem outros pedidos em curso. O teste retira temporariamente a permissão, verifica a recusa e repõe a política no final. Para o teste de serviço parado, usa a opção `--offline` com o Ollama desligado e volta a abri-lo depois.
 
 
 ## Projetos de referência
@@ -64,7 +75,7 @@ git submodule update --init
 ollama pull qwen3:8b
 ```
 
-Para arrancar pelo terminal, usa `python jarvis_holo.py` e abre [o painel local](http://localhost:4890). Abre uma pasta e uma nota com o rato e carrega em **Resumir com Qwen**. Com a webcam, agarra um cartão e comprime-o com as duas mãos para pedir o mesmo resumo.
+Para arrancar pelo terminal, usa `python -m jarvis.holo` e abre [o painel local](http://localhost:4890). Abre uma pasta e uma nota com o rato e carrega em **Resumir com Qwen**. Com a webcam, agarra um cartão e comprime-o com as duas mãos para pedir o mesmo resumo.
 
 O servidor usa o Ollama na própria máquina. Para usar outro modelo instalado, define `$env:JARVIS_MODEL` antes de arrancar. Quando o resumo aparecer no painel, carrega em **Ouvir resumo**. A reprodução usa uma voz local em português do navegador, com preferência por português de Portugal. Se o botão indicar que falta uma voz, adiciona uma voz portuguesa nas definições de Voz do Windows e volta a abrir o navegador. A ligação ao Jarvis de desktop faz parte da etapa seguinte.
 

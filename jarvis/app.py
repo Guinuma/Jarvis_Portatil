@@ -12,7 +12,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-ROOT = Path(__file__).resolve().parent
+PACKAGE = Path(__file__).resolve().parent
+ROOT = PACKAGE.parent
 OLLAMA_VERSION_URL = "http://127.0.0.1:11434/api/version"
 HERMES_URL = "http://127.0.0.1:8642/v1/chat/completions"
 
@@ -47,7 +48,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/":
-            self.send_content(200, (ROOT / "jarvis.html").read_bytes(), "text/html; charset=utf-8")
+            self.send_content(200, (PACKAGE / "ui" / "jarvis.html").read_bytes(), "text/html; charset=utf-8")
         else:
             self.send_content(404, {"error": "Página indisponível."})
 
@@ -73,7 +74,8 @@ class Handler(BaseHTTPRequestHandler):
                 process = self.server.holo_process
                 if (process is None or process.poll() is not None) and not self.holo_ready(url):
                     self.server.holo_process = subprocess.Popen(
-                        [sys.executable, str(ROOT / "jarvis_holo.py")],
+                        [sys.executable, "-m", "jarvis.holo"],
+                        cwd=ROOT,
                         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                     )
             for _ in range(30):

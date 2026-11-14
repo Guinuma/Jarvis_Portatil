@@ -15,7 +15,7 @@ if not exist "holo\server.py" (
     exit /b 1
 )
 
-python jarvis_holo.py --open
+python -m jarvis.holo --open
 set "jarvis_exit=%errorlevel%"
 if not "%jarvis_exit%"=="0" pause
 exit /b %jarvis_exit%

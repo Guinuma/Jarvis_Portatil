@@ -6,7 +6,7 @@ import sys
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from jarvis_app import api_key
+from jarvis.app import api_key
 
 
 def request_json(url, payload=None, key=None, *, stream=False):

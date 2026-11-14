@@ -16,7 +16,7 @@ Ao concluir uma alteração, atualiza neste ficheiro os itens validados e regist
 
 #### Comparação no portátil
 
-Executar `python compare_models.py qwen3:8b hermes3:3b` com ambos os modelos instalados. Os quatro pedidos usam o Ollama diretamente. As ferramentas de listagem e agenda são apenas esquemas para testar a seleção e os argumentos. A execução real da listagem pelo Hermes Agent foi verificada separadamente.
+Executar `python -m scripts.compare_models qwen3:8b hermes3:3b` com ambos os modelos instalados. Os quatro pedidos usam o Ollama diretamente. As ferramentas de listagem e agenda são apenas esquemas para testar a seleção e os argumentos. A execução real da listagem pelo Hermes Agent foi verificada separadamente.
 
 | Modelo | Hora e data | Chamadas com argumentos corretos | Primeiro texto ou chamada | Memória do modelo no Ollama |
 | --- | --- | --- | --- | --- |
@@ -237,18 +237,6 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 
 - [ ] Confirmar que a memória local pode ser consultada, editada e recuperada depois de reiniciar com a Internet desligada.
 
-#### Comparação no portátil
-
-Executar `python compare_models.py qwen3:8b hermes3:3b` com ambos os modelos instalados. Os quatro pedidos usam o Ollama diretamente. As ferramentas de listagem e agenda são apenas esquemas para testar a seleção e os argumentos. A execução real da listagem pelo Hermes Agent foi verificada separadamente.
-
-| Modelo | Hora e data | Chamadas com argumentos corretos | Primeiro texto ou chamada | Memória do modelo no Ollama |
-| --- | --- | --- | --- | --- |
-| `qwen3:8b` | 2/2 | 1/2 | 1,12–9,78 s | 5,95 GB |
-| `hermes3:3b` | 1/2 | 0/2 | 0,40–3,10 s nos três pedidos com saída | 2,57 GB |
-
-Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na data de amanhã, mas usou `autorizada` como caminho em vez de `.` na listagem. O Hermes 3 anunciou suporte a ferramentas, mas não devolveu chamadas estruturadas válidas neste teste. A amostra consiste numa passagem por modelo. Os tempos incluem o estado de carregamento de cada pedido nessa passagem.
-
-
 ### Extensões e manutenção
 
 - [ ] Criar cópias de segurança das definições, memórias e rotinas.
@@ -393,18 +381,6 @@ Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na d
 - [ ] Pedir confirmação antes de eliminar ficheiros permanentemente. Depende de poder identificar os ficheiros e mostrar o efeito da eliminação.
 - [ ] Invalidar a confirmação quando o conteúdo ou destino da ação muda e pedir nova confirmação.
 - [ ] Testar, para cada ação sujeita a confirmação, os casos de aprovação, recusa e cancelamento.
-
-#### Comparação no portátil
-
-Executar `python compare_models.py qwen3:8b hermes3:3b` com ambos os modelos instalados. Os quatro pedidos usam o Ollama diretamente. As ferramentas de listagem e agenda são apenas esquemas para testar a seleção e os argumentos. A execução real da listagem pelo Hermes Agent foi verificada separadamente.
-
-| Modelo | Hora e data | Chamadas com argumentos corretos | Primeiro texto ou chamada | Memória do modelo no Ollama |
-| --- | --- | --- | --- | --- |
-| `qwen3:8b` | 2/2 | 1/2 | 1,12–9,78 s | 5,95 GB |
-| `hermes3:3b` | 1/2 | 0/2 | 0,40–3,10 s nos três pedidos com saída | 2,57 GB |
-
-Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na data de amanhã, mas usou `autorizada` como caminho em vez de `.` na listagem. O Hermes 3 anunciou suporte a ferramentas, mas não devolveu chamadas estruturadas válidas neste teste. A amostra consiste numa passagem por modelo. Os tempos incluem o estado de carregamento de cada pedido nessa passagem.
-
 
 ### Extensões e manutenção
 

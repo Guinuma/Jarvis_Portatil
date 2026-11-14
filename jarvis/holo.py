@@ -9,7 +9,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-ROOT = Path(__file__).resolve().parent
+PACKAGE = Path(__file__).resolve().parent
+ROOT = PACKAGE.parent
 HOLO = ROOT / "holo"
 OLLAMA = "http://127.0.0.1:11434"
 MODEL = os.environ.get("JARVIS_MODEL", "qwen3:8b")
@@ -19,7 +20,7 @@ def load_page():
     page = (HOLO / "holo.html").read_text(encoding="utf-8")
     start = page.index("/* squeeze-to-summarize:")
     end = page.index("/* ---------- 3D objects ---------- */", start)
-    integration = (ROOT / "summary.js").read_text(encoding="utf-8")
+    integration = (PACKAGE / "ui" / "holo_summary.js").read_text(encoding="utf-8")
     return (page[:start] + integration + "\n" + page[end:]).encode("utf-8")
 
 

@@ -5,7 +5,7 @@ import re
 from time import perf_counter
 from urllib.request import Request, urlopen
 
-from check_local import check_ollama, request_json
+from .check_local import check_ollama, request_json
 
 BASE = "http://127.0.0.1:11434"
 SYSTEM = {"role": "system", "content": "Responde brevemente em português de Portugal."}

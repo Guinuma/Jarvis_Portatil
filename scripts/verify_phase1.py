@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from jarvis_app import Handler, api_key
+from jarvis.app import Handler, api_key
 
 TOOL = "mcp__jarvis_files__listar_ficheiros"
 PROMPT = "Que ficheiros tenho na pasta de teste?"
