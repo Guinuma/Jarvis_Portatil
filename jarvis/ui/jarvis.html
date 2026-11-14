@@ -44,6 +44,12 @@ form{display:flex;gap:8px}#prompt{width:100%;min-width:0;color:var(--text);backg
       <button type="button" id="dictate" aria-keyshortcuts="Alt+Shift+D" title="Alt+Shift+D">Ditar</button>
       <button type="button" id="stop-speech" hidden>Parar leitura</button>
       <label><input type="checkbox" id="auto-read"> Ler respostas automaticamente</label>
+      <label>Voz <select id="speech-voice"><option value="">Automática</option></select></label>
+      <label>Velocidade <select id="speech-rate">
+        <option value="0.8">Lenta</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.2">Rápida</option>
+      </select></label>
       <span id="voice-status" role="status"></span>
     </div>
     <p id="notice" role="alert"></p>
@@ -71,6 +77,9 @@ const voiceStatus = document.querySelector('#voice-status');
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 const autoRead = document.querySelector('#auto-read');
+const speechVoice = document.querySelector('#speech-voice');
+const speechRate = document.querySelector('#speech-rate');
+const synthesis = window.speechSynthesis;
 let speaking = new Set();
 let streamedSpeech;
 
@@ -87,13 +96,36 @@ stopSpeech.addEventListener('click', interruptSpeech);
 autoRead.addEventListener('change', () => {
   if (!autoRead.checked) interruptSpeech();
 });
-autoRead.disabled = !('speechSynthesis' in window);
+autoRead.disabled = !synthesis;
+speechRate.disabled = !synthesis;
+speechVoice.disabled = !synthesis;
 
-function queueSpeech(text) {
-  const voices = window.speechSynthesis.getVoices().filter(
+function localPortugueseVoices() {
+  return synthesis.getVoices().filter(
     voice => voice.localService && /^pt(?:[-_]|$)/i.test(voice.lang)
   );
-  const voice = voices.find(voice => /^pt[-_]pt$/i.test(voice.lang)) || voices[0];
+}
+
+function refreshVoiceOptions() {
+  const selected = speechVoice.value;
+  const voices = localPortugueseVoices();
+  speechVoice.replaceChildren(new Option('Automática', ''));
+  for (const voice of voices) {
+    speechVoice.add(new Option(voice.name + ' (' + voice.lang + ')', voice.voiceURI));
+  }
+  if (voices.some(voice => voice.voiceURI === selected)) speechVoice.value = selected;
+}
+
+if (synthesis) {
+  refreshVoiceOptions();
+  synthesis.addEventListener('voiceschanged', refreshVoiceOptions);
+}
+
+function queueSpeech(text) {
+  const voices = localPortugueseVoices();
+  const voice = voices.find(voice => voice.voiceURI === speechVoice.value)
+    || voices.find(voice => /^pt[-_]pt$/i.test(voice.lang))
+    || voices[0];
   if (!voice) {
     voiceStatus.textContent = 'Ativa uma voz portuguesa no Windows para ouvir a resposta.';
     return;
@@ -101,6 +133,7 @@ function queueSpeech(text) {
   const speech = new SpeechSynthesisUtterance(text);
   speech.voice = voice;
   speech.lang = voice.lang;
+  speech.rate = Number(speechRate.value);
   speaking.add(speech);
   stopSpeech.hidden = false;
   voiceStatus.textContent = 'A ler a resposta…';

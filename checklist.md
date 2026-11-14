@@ -72,8 +72,8 @@ Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes co
 - [ ] Interromper a voz a meio de uma frase e confirmar que o áudio para imediatamente, incluindo o que já estava em fila.
 - [ ] Reconhecer «cancela» durante uma operação e confirmar que o pedido pendente é cancelado. Depende da transcrição e do cancelamento da operação.
 - [ ] Corrigir um pedido com uma instrução como «afinal, daqui a 30 minutos» sem reiniciar a conversa. Confirmar que fica apenas o lembrete corrigido. Depende do contexto e da edição de lembretes.
-- [ ] Alterar a voz de leitura e confirmar a mudança na resposta seguinte.
-- [ ] Alterar a velocidade da leitura e confirmar a mudança na resposta seguinte.
+- [x] Alterar a voz local de leitura e confirmar a mudança na resposta seguinte com síntese simulada.
+- [x] Alterar a velocidade da leitura e confirmar a mudança na resposta seguinte com síntese simulada.
 - [ ] Escolher o microfone e verificar que o áudio é captado pelo dispositivo selecionado.
 - [ ] Escolher a saída de áudio e verificar que a resposta é reproduzida no dispositivo selecionado.
 - [x] Desativar **Ler respostas automaticamente** e receber a resposta por texto.
