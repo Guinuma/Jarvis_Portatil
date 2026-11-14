@@ -2,6 +2,18 @@
 
 Assistente de voz local no Windows com uma interface controlada por gestos da webcam.
 
+Vê o [checklist de desenvolvimento](checklist.md) para acompanhar as cinco fases do projeto.
+
+## Verificar a base local
+
+Com o Ollama aberto, corre `python check_local.py --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.
+
+Para testar também o Hermes Agent, configura-o para usar o mesmo modelo no Ollama em `http://127.0.0.1:11434/v1`. Ativa a API do Hermes em `127.0.0.1:8642`, define a chave `API_SERVER_KEY` na configuração do Hermes e arranca com `hermes gateway`. Na sessão do PowerShell onde vais correr o diagnóstico, define `JARVIS_HERMES_API_KEY` com a mesma chave e corre `python check_local.py`.
+
+O teste envia uma pergunta curta em português e verifica a hora na resposta. A opção `--model` só verifica o modelo no Ollama. A escolha do modelo usado pelo agente é feita na configuração do Hermes. A execução efetiva de ferramentas ainda faz parte da base técnica em desenvolvimento.
+
+[Configuração do Ollama no Hermes Agent](https://hermes-agent.nousresearch.com/docs/guides/local-ollama-setup) · [API local do Hermes Agent](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)
+
 ## Projetos de referência
 
 - [Jarvis](https://github.com/isair/jarvis) para voz, chat e memória local com Ollama.
