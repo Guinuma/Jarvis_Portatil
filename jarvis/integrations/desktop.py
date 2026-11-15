@@ -79,21 +79,37 @@ def desktop_query(text, root):
     return None
 
 
-def manage_window(command):
-    user32 = ctypes.windll.user32
+def visible_windows(user32):
     callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
-    matches = []
+    user32.EnumWindows.argtypes = (callback_type, wintypes.LPARAM)
+    user32.IsWindowVisible.argtypes = (wintypes.HWND,)
+    user32.GetWindowTextW.argtypes = (wintypes.HWND, wintypes.LPWSTR, ctypes.c_int)
+    windows = []
 
     @callback_type
     def collect(handle, _):
         if user32.IsWindowVisible(handle):
             title = ctypes.create_unicode_buffer(512)
-            user32.GetWindowTextW(handle, title, len(title))
-            if command[2] in normalize(title.value):
-                matches.append((handle, title.value))
+            if user32.GetWindowTextW(handle, title, len(title)):
+                windows.append((handle, title.value))
         return True
 
-    user32.EnumWindows(collect, 0)
+    if not user32.EnumWindows(collect, 0):
+        raise OSError("Não consegui consultar as janelas do Windows.")
+    return windows
+
+
+def place_window(user32, handle, after, x, y, flags):
+    user32.SetWindowPos.argtypes = (
+        wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT,
+    )
+    return user32.SetWindowPos(handle, after, x, y, 0, 0, flags)
+
+
+def manage_window(command):
+    user32 = ctypes.windll.user32
+    matches = [(handle, title) for handle, title in visible_windows(user32)
+               if command[2] in normalize(title)]
     if len(matches) != 1:
         return ("Encontrei várias janelas: " + " · ".join(title for _, title in matches)
                 if matches else "Não encontrei uma janela visível com esse título.")
@@ -108,12 +124,10 @@ def manage_window(command):
             x, y = screens[monitor - 1]
         else:
             x, y = int(command[3]), int(command[4])
-        user32.SetWindowPos.argtypes = (
-            wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT,
-        )
-        if not user32.SetWindowPos(handle, None, x, y, 0, 0, 0x0015):
+        if not place_window(user32, handle, None, x, y, 0x0015):
             raise OSError("O Windows não moveu a janela.")
     else:
+        user32.ShowWindow.argtypes = (wintypes.HWND, ctypes.c_int)
         user32.ShowWindow(handle, {"minimiza": 6, "maximiza": 3, "restaura": 9}[action])
     return f"Comando {action} aplicado a {title}."
 

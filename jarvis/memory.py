@@ -54,6 +54,9 @@ class Memory:
             connection.execute("""CREATE TABLE IF NOT EXISTS settings (
                 name TEXT PRIMARY KEY, value TEXT NOT NULL
             )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS personal_checklists (
+                id INTEGER PRIMARY KEY, title TEXT NOT NULL, items TEXT NOT NULL
+            )""")
             connection.execute("""CREATE TABLE IF NOT EXISTS workflows (
                 id INTEGER PRIMARY KEY, step INTEGER NOT NULL, status TEXT NOT NULL,
                 data TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, claim TEXT, lease REAL

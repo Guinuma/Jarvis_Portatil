@@ -10,31 +10,36 @@ MAX_FILE = 32 * 1024 * 1024
 def document_sections(path):
     if not path.is_file() or path.stat().st_size > MAX_FILE:
         raise ValueError("Indica um documento existente com até 32 MB.")
-    if path.suffix.lower() == ".pdf":
-        try:
-            from pypdf import PdfReader
-            from pypdf.errors import PyPdfError
-        except ImportError as error:
-            raise ValueError("Instala pypdf para comparar PDFs.") from error
-        try:
-            with path.open("rb") as stream:
-                pages = PdfReader(stream).pages
-                if len(pages) > 100:
-                    raise ValueError("A comparação suporta PDFs com até 100 páginas.")
-                sections = [" ".join((page.extract_text() or "").split()) for page in pages]
-        except PyPdfError as error:
-            raise ValueError("Não consegui extrair o texto do PDF.") from error
-        if not any(sections):
-            raise ValueError("O PDF não contém texto selecionável. Prepara uma versão com OCR.")
-        return sections
-    if path.suffix.lower() == ".docx":
-        from .office import office_module
-
-        document = office_module(".docx")(path)
-        return [paragraph.text for paragraph in document.paragraphs]
+    suffix = path.suffix.lower()
+    if suffix in {".pdf", ".docx"}:
+        with path.open("rb") as stream:
+            return attachment_sections(stream, suffix)
     if path.suffix.lower() in {".txt", ".md"}:
         return path.read_text(encoding="utf-8-sig").splitlines()
     raise ValueError("Escolhe dois documentos PDF, DOCX, TXT ou Markdown do mesmo formato.")
+
+
+def attachment_sections(stream, suffix):
+    if suffix == ".docx":
+        from .office import office_module
+
+        document = office_module(".docx")(stream)
+        return [paragraph.text for paragraph in document.paragraphs]
+    try:
+        from pypdf import PdfReader
+        from pypdf.errors import PyPdfError
+    except ImportError as error:
+        raise ValueError("Instala pypdf para ler PDFs.") from error
+    try:
+        pages = PdfReader(stream).pages
+        if len(pages) > 100:
+            raise ValueError("São suportados PDFs com até 100 páginas.")
+        sections = [" ".join((page.extract_text() or "").split()) for page in pages]
+    except PyPdfError as error:
+        raise ValueError("Não consegui extrair o texto do PDF.") from error
+    if not any(sections):
+        raise ValueError("O PDF não contém texto selecionável. Prepara uma versão com OCR.")
+    return sections
 
 
 def compare_documents(root, old_name, new_name):

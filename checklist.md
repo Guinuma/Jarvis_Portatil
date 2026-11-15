@@ -464,6 +464,32 @@ Consulta os [comandos e dependências da Fase 4](README.md#comandos-da-fase-4).
 - [ ] Ativar o modelo de visão quando o utilizador pede uma análise de imagem, janela ou câmara.
 - [ ] Permitir ativar ou desativar serviços externos preservando os comandos locais.
 
+## Mini-fase 1 — Widgets no Windows
+
+### Painel de widgets
+
+- [x] Adicionar um cartão Widgets por baixo de Ferramentas, com interruptores para Música, Checklist e Quick Chat.
+- [x] Abrir e fechar cada widget numa janela flutuante independente e sincronizar o interruptor quando a janela for fechada pelo botão ×.
+- [x] Iniciar o JARVIS com os três widgets fechados, mesmo que estivessem abertos na sessão anterior.
+- [x] Permitir arrastar, recolher e fixar cada widget por cima das outras janelas. Guardar a última posição e repô-la quando o widget voltar a abrir.
+- [x] Reutilizar os atalhos e as ações existentes no JARVIS. O Quick Chat partilha o envio de mensagens, o ditado, Alt+Shift+D e Esc.
+
+### Música
+
+- [x] Permitir configurar uma pasta local de música. Usar `C:\Users\guinm\Music\para mp3` como pasta na instalação atual.
+- [x] Reproduzir as faixas locais e mostrar título, artista e progresso, com controlos para reproduzir, pausar, avançar e recuar.
+- [x] Mostrar a fila de reprodução e um espectro que reage ao áudio ao expandir o widget.
+
+### Checklist
+
+- [x] Criar listas pessoais com nome e itens através de um pedido no chat.
+- [x] Escolher uma lista no widget, marcar ou desmarcar itens e mostrar o progresso. Guardar o estado dos itens e a última lista selecionada por perfil.
+
+### Quick Chat
+
+- [x] Mostrar uma barra flutuante para escrever, ditar e largar ficheiros, reutilizando a conversa e os controlos do JARVIS. Suporta um PDF com texto, DOCX ou ficheiro de texto UTF-8 por pedido.
+- [x] Mostrar a resposta por cima da barra e permitir continuar a mesma conversa no JARVIS completo.
+
 ## Protótipo H.O.L.O Hands
 
 ### Validar a base
