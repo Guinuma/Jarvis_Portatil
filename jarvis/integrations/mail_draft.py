@@ -57,12 +57,17 @@ def address_list(value):
     return addresses
 
 
-def export_draft(root, draft, attachments):
+def build_draft(root, draft, attachments, thread=None):
     message = EmailMessage(policy=policy.SMTP)
     addresses = address_list(draft["recipient"])
     if addresses:
         message["To"] = addresses
     message["Subject"] = draft["subject"]
+    if thread:
+        if thread["reply_to"]:
+            message["In-Reply-To"] = thread["reply_to"]
+        if thread["references"]:
+            message["References"] = " ".join(thread["references"])
     message.set_content(draft["body"])
     remaining = MAX_TOTAL
     for expected in attachments:
@@ -76,4 +81,8 @@ def export_draft(root, draft, attachments):
         main, subtype = mime_type.split("/", 1)
         message.add_attachment(content, maintype=main, subtype=subtype, filename=current["name"])
         remaining -= len(content)
-    return message.as_bytes()
+    return message
+
+
+def export_draft(root, draft, attachments, thread=None):
+    return build_draft(root, draft, attachments, thread).as_bytes()

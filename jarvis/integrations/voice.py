@@ -13,6 +13,10 @@ def model_path():
 
 
 def transcribe(audio):
+    return " ".join(segment["text"] for segment in transcribe_segments(audio)).strip()[:8000]
+
+
+def transcribe_segments(audio):
     global _model
     if not audio or len(audio) > 8 * 1024 * 1024:
         raise ValueError('Grava entre um instante e 60 segundos de voz.')
@@ -31,6 +35,9 @@ def transcribe(audio):
         segments, _ = _model.transcribe(samples, language='pt', beam_size=5, vad_filter=True,
                                        initial_prompt='Transcrição em português de Portugal.',
                                        condition_on_previous_text=False)
-        return ' '.join(segment.text.strip() for segment in segments).strip()[:8000]
+        return [
+            {"start": round(segment.start * 1000), "end": round(segment.end * 1000), "text": segment.text.strip()[:8000]}
+            for segment in segments if segment.text.strip()
+        ]
     finally:
         _lock.release()

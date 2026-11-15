@@ -83,6 +83,82 @@ class Memory:
                 id INTEGER PRIMARY KEY, root TEXT NOT NULL, path TEXT NOT NULL, trader TEXT NOT NULL,
                 trader_key TEXT NOT NULL, day TEXT NOT NULL, UNIQUE(root, path)
             )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS study_cards (
+                topic_key TEXT NOT NULL, topic TEXT NOT NULL, question_key TEXT NOT NULL,
+                question TEXT NOT NULL, answer TEXT NOT NULL, explanation TEXT NOT NULL, source TEXT,
+                PRIMARY KEY(topic_key, question_key)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS study_quizzes (
+                id INTEGER PRIMARY KEY, topic TEXT NOT NULL, cards TEXT NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS study_difficulties (
+                topic_key TEXT PRIMARY KEY, topic TEXT NOT NULL, detail TEXT NOT NULL, updated TEXT NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS meeting_materials (
+                event_id INTEGER PRIMARY KEY, notes TEXT NOT NULL DEFAULT '',
+                documents TEXT NOT NULL DEFAULT '[]', transcript TEXT, followup TEXT NOT NULL DEFAULT ''
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS research_journal (
+                id INTEGER PRIMARY KEY, question TEXT NOT NULL, details TEXT NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS imported_mail (
+                id INTEGER PRIMARY KEY, account_id TEXT NOT NULL, identity TEXT NOT NULL, folder TEXT NOT NULL,
+                generation INTEGER NOT NULL, uid INTEGER NOT NULL, body BLOB NOT NULL, subject TEXT NOT NULL,
+                subject_key TEXT NOT NULL, contacts TEXT NOT NULL, search_body TEXT NOT NULL, dated TEXT, stamp REAL,
+                sender TEXT NOT NULL, UNIQUE(account_id, identity, folder, generation, uid)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS mail_sends (
+                workflow_id INTEGER PRIMARY KEY, revision INTEGER NOT NULL, account_id TEXT NOT NULL,
+                identity TEXT NOT NULL, smtp_identity TEXT NOT NULL, message_id TEXT NOT NULL UNIQUE,
+                status TEXT NOT NULL, detail TEXT NOT NULL, sent_at TEXT
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS meeting_recordings (
+                id TEXT PRIMARY KEY, event_id INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'a gravar',
+                path TEXT, consented_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )""")
+            connection.execute("""CREATE UNIQUE INDEX IF NOT EXISTS active_meeting_recording
+                ON meeting_recordings(event_id) WHERE status IN ('a gravar','a fechar')""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS meeting_segments (
+                recording_id TEXT NOT NULL, number INTEGER NOT NULL, offset INTEGER NOT NULL,
+                digest TEXT NOT NULL, cues TEXT NOT NULL, PRIMARY KEY(recording_id, number)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS meeting_insights (
+                event_id INTEGER NOT NULL, path TEXT NOT NULL, digest TEXT NOT NULL,
+                scope TEXT NOT NULL, items TEXT NOT NULL, PRIMARY KEY(event_id, digest, scope)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS pantry (
+                item_key TEXT NOT NULL, unit TEXT NOT NULL, name TEXT NOT NULL,
+                quantity INTEGER NOT NULL, PRIMARY KEY(item_key, unit)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS meal_recipes (
+                name_key TEXT PRIMARY KEY, recipe TEXT NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS meal_plans (
+                id INTEGER PRIMARY KEY, plan TEXT NOT NULL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS local_previews (
+                id INTEGER PRIMARY KEY, kind TEXT NOT NULL, label TEXT NOT NULL, data TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'a rever'
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS delete_reviews (
+                id INTEGER PRIMARY KEY, path TEXT NOT NULL, token TEXT NOT NULL UNIQUE, fingerprint TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'a rever', detail TEXT
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS remote_drafts (
+                workflow_id INTEGER NOT NULL, revision INTEGER NOT NULL, account_id TEXT NOT NULL,
+                identity TEXT NOT NULL, folder TEXT NOT NULL, message_id TEXT NOT NULL UNIQUE, state TEXT NOT NULL,
+                PRIMARY KEY(workflow_id, revision, account_id)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS matrix_outbox (
+                id INTEGER PRIMARY KEY, room TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                transaction_id TEXT NOT NULL UNIQUE, message TEXT NOT NULL,
+                state TEXT NOT NULL DEFAULT 'a rever', event_id TEXT
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS external_action_reviews (
+                id INTEGER PRIMARY KEY, preview_id INTEGER NOT NULL, action TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                snapshot TEXT NOT NULL, payload TEXT NOT NULL, reference TEXT NOT NULL UNIQUE,
+                state TEXT NOT NULL DEFAULT 'a rever', UNIQUE(preview_id, action, payload)
+            )""")
             return [dict(row) for row in connection.execute(query, parameters)]
 
     def list(self):

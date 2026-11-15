@@ -24,7 +24,7 @@ body[data-busy] .reactor::before{animation-duration:6s} @keyframes rotate{to{tra
 .bubble.user{align-self:flex-end;background:#10364b}.bubble.assistant{align-self:flex-start}
 form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-top:8px}#memory-panel{margin-top:12px}#prompt{width:100%;min-width:0;color:var(--text);background:#050f1a;border:1px solid var(--line);border-radius:8px;padding:10px}.submit{color:#001621;background:var(--cyan);font-weight:700}
 .voice-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;color:var(--muted)}
-#workflow-panel{margin-top:12px}.workflow-card{border-top:1px solid var(--line);padding:10px 0}
+#workflow-panel,#meeting-panel{margin-top:12px}#meeting-capture{flex-wrap:wrap;align-items:center}.workflow-card{border-top:1px solid var(--line);padding:10px 0}
 .workflow-card form,.workflow-controls{display:flex;flex-wrap:wrap;gap:8px;margin:.6rem 0}
 .workflow-card form label{display:grid;flex:1 1 100%;gap:4px}.workflow-card textarea{min-height:10rem}
 .workflow-card pre{white-space:pre-wrap;overflow-wrap:anywhere}.workflow-card a{color:var(--cyan)}
@@ -49,6 +49,7 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
     </form>
     <div class="voice-controls">
       <button type="button" id="dictate" aria-keyshortcuts="Alt+Shift+D" title="Alt+Shift+D">Ditar</button>
+      <button type="button" id="send-transcript" hidden>Enviar transcrição</button>
       <button type="button" id="stop-speech" aria-keyshortcuts="Escape" hidden>Parar leitura</button>
       <label><input type="checkbox" id="auto-read"> Ler respostas automaticamente</label>
       <label>Voz <select id="speech-voice"><option value="">Automática</option></select></label>
@@ -94,6 +95,18 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
       </form>
       <ul id="routine-history"></ul>
     </details>
+    <details id="meeting-panel">
+      <summary>Gravar reunião</summary>
+      <form id="meeting-capture">
+        <label>Evento da agenda <input name="event" type="number" min="1" max="9007199254740991" required></label>
+        <label><input name="consent" type="checkbox" required> Obtive o consentimento dos participantes.</label>
+        <button type="submit" id="meeting-start">Iniciar gravação</button>
+      </form>
+      <button type="button" id="meeting-stop" hidden>Parar gravação</button>
+      <button type="button" id="meeting-retry" hidden>Repetir gravação pendente</button>
+      <p id="meeting-feedback" role="status"></p>
+      <ul id="meeting-recordings"></ul>
+    </details>
     <details id="workflow-panel">
       <summary>Tarefas em vários passos</summary>
       <p id="workflow-feedback" role="status"></p>
@@ -104,6 +117,12 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
   <aside class="panel" aria-labelledby="activity-heading">
     <h2 id="activity-heading">Atividade do Hermes</h2>
     <div role="log" aria-label="Atividade das ferramentas"><ul id="activity"><li>À espera de um pedido.</li></ul></div>
+    <details id="service-panel">
+      <summary>Estado das integrações</summary>
+      <button id="service-refresh" type="button">Verificar ligações</button>
+      <p id="service-feedback" role="status"></p>
+      <ul id="service-list"></ul>
+    </details>
   </aside>
 </main>
 <script>
@@ -158,6 +177,12 @@ function saveConversation() {
 const headers = {'Content-Type': 'application/json'};
 
 const dictate = document.querySelector('#dictate');
+const sendTranscript = document.querySelector('#send-transcript');
+sendTranscript.addEventListener('click', () => {
+  if (recognition || requestController || send.disabled || !input.value.trim()) return;
+  form.requestSubmit(send);
+});
+form.addEventListener('submit', () => { sendTranscript.hidden = true; });
 const stopSpeech = document.querySelector('#stop-speech');
 const voiceStatus = document.querySelector('#voice-status');
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -320,38 +345,57 @@ document.addEventListener('keydown', event => {
   dictate.click();
 });
 
-async function recordLocalVoice() {
+let voiceTrigger;
+
+async function recordLocalVoice({field = input, trigger = dictate, feedback = voiceStatus} = {}) {
+  const chat = field === input;
+  if (chat) sendTranscript.hidden = true;
+  const label = trigger.textContent;
+  voiceTrigger = trigger;
+  trigger.disabled = true;
   interruptSpeech();
   dictate.disabled = true;
   send.disabled = true;
-  const originalDraft = input.value;
+  const originalDraft = field.value;
   let timer;
+  let active = true;
   function finish() {
+    if (!active) return;
+    active = false;
     clearTimeout(timer);
     capture?.getTracks().forEach(track => track.stop());
     capture = undefined;
     recognition = undefined;
     dictate.disabled = false;
-    dictate.textContent = 'Ditar';
+    voiceTrigger = undefined;
+    trigger.disabled = false;
+    trigger.textContent = label;
     microphoneStatus.textContent = 'Microfone inativo';
     send.disabled = Boolean(requestController);
-    input.focus();
+    if (field.isConnected) field.focus();
   }
   try {
     capture = await navigator.mediaDevices.getUserMedia({audio: microphone.value
       ? {deviceId:{exact:microphone.value}} : true});
+    if (!field.isConnected) {
+      finish();
+      return;
+    }
     const recorder = new MediaRecorder(capture);
     const chunks = [];
     recognition = {stop: () => recorder.state !== 'inactive' && recorder.stop()};
     recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-    recorder.onerror = () => { voiceStatus.textContent = 'Falha na gravação. Tenta novamente.'; finish(); };
+    recorder.onerror = () => { feedback.textContent = 'Falha na gravação. Tenta novamente.'; finish(); };
     recorder.onstop = async () => {
+      if (!active) return;
       clearTimeout(timer);
       capture?.getTracks().forEach(track => track.stop());
+      trigger.disabled = true;
       dictate.disabled = true;
       microphoneStatus.textContent = 'Microfone inativo';
-      voiceStatus.textContent = 'A transcrever no computador…';
+      feedback.textContent = 'A transcrever no computador…';
       try {
+        if (!field.isConnected) return;
         const bytes = new Uint8Array(await new Blob(chunks).arrayBuffer());
         let binary = '';
         for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -361,29 +405,40 @@ async function recordLocalVoice() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.error);
         if (!result.text) throw new Error('Não reconheci voz. Tenta falar mais perto do microfone.');
-        if (requestController && /^cancela[.!?]?$/i.test(result.text.trim())) {
+        if (!field.isConnected) return;
+        if (chat && requestController && /^cancela[.!?]?$/i.test(result.text.trim())) {
           requestController.abort();
           input.value = originalDraft;
-          voiceStatus.textContent = 'Pedido cancelado por voz.';
+          feedback.textContent = 'Pedido cancelado por voz.';
+        } else if (chat) {
+          input.value = result.text.slice(0, input.maxLength);
+          document.querySelector('#transcript-preview').textContent = input.value;
+          sendTranscript.hidden = false;
+          feedback.textContent = 'Revê e envia a transcrição para executar o pedido.';
         } else {
-          input.value = result.text;
-          document.querySelector('#transcript-preview').textContent = result.text;
-          voiceStatus.textContent = 'Revê a transcrição e prime Enviar.';
+          const separator = field.value ? '\n\n' : '';
+          const available = field.maxLength - field.value.length - separator.length;
+          if (available < 1) throw new Error('O corpo do email já atingiu o limite de texto.');
+          field.value += separator + result.text.slice(0, available);
+          field.dispatchEvent(new Event('input', {bubbles:true}));
+          feedback.textContent = result.text.length > available
+            ? 'Foi inserida a parte da transcrição que cabe no rascunho. Revê o texto.'
+            : 'Transcrição inserida no corpo do email. Revê o texto e guarda o rascunho.';
         }
       } catch (error) {
-        input.value = originalDraft;
-        voiceStatus.textContent = error.message || 'Não consegui transcrever.';
+        if (chat) input.value = originalDraft;
+        feedback.textContent = error.message || 'Não consegui transcrever.';
       } finally { finish(); }
     };
     recorder.start();
-    dictate.disabled = false;
-    dictate.textContent = 'Parar ditado';
+    trigger.disabled = false;
+    trigger.textContent = 'Parar ditado';
     microphoneStatus.textContent = 'Microfone ativo';
-    voiceStatus.textContent = 'A gravar localmente. Prime Parar ditado quando terminares (máximo 60 segundos).';
+    feedback.textContent = 'A gravar localmente. Prime Parar ditado quando terminares (máximo 60 segundos).';
     timer = setTimeout(() => recognition?.stop(), 60000);
     refreshMicrophones().catch(() => {});
   } catch {
-    voiceStatus.textContent = 'Permite o acesso ao microfone e confirma o dispositivo selecionado.';
+    feedback.textContent = 'Permite o acesso ao microfone e confirma o dispositivo selecionado.';
     finish();
   }
 }
@@ -400,6 +455,7 @@ dictate.addEventListener('click', async () => {
   interruptSpeech();
   dictate.disabled = true;
   send.disabled = true;
+  sendTranscript.hidden = true;
   voiceStatus.textContent = 'A verificar o ditado local…';
   function finish(micStatus = "Microfone inativo") {
     microphoneStatus.textContent = micStatus;
@@ -448,7 +504,10 @@ dictate.addEventListener('click', async () => {
         session.abort();
         return;
       }
-      if (final) voiceStatus.textContent = 'Revê a transcrição antes de enviar.';
+      if (final) {
+        sendTranscript.hidden = false;
+        voiceStatus.textContent = 'Revê e envia a transcrição para executar o pedido.';
+      }
     };
     session.onerror = event => {
       if (recognition !== session) return;
@@ -605,14 +664,18 @@ form.addEventListener('submit', async event => {
         link.href = source.url;
         link.textContent = source.label;
         link.target = '_blank';
-        link.rel = 'noopener';
+        link.rel = 'noopener noreferrer';
         answer.append(document.createElement('br'), link);
       }
-      activity.firstElementChild.textContent = 'Pedido processado localmente';
+      activity.firstElementChild.textContent = result.provider
+        ? 'Resposta de ' + result.provider
+        : 'Pedido processado localmente';
       readStreamedText(speech, reply, true);
     }
-    history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
-    saveConversation();
+    if (!result?.transient) {
+      history.push(user, {role: 'assistant', content: reply.slice(0, 8000)});
+      saveConversation();
+    }
     if (document.querySelector('#routine-panel').open) memoryAction('list');
     status.textContent = 'Pronto';
     if ('speechSynthesis' in window) {
@@ -733,6 +796,7 @@ document.querySelector('#memory-export').addEventListener('click', async () => {
 });
 document.querySelector('#history-query').addEventListener('input', renderHistorySearch);
 document.querySelector('#new-chat').addEventListener('click', () => {
+  sendTranscript.hidden = true;
   if (requestController || recognition) return;
   sessionId = undefined;
   history = [];
@@ -769,6 +833,29 @@ async function checkAgendaAlerts() {
 }
 setInterval(checkAgendaAlerts, 10000);
 
+const serviceRefresh = document.querySelector('#service-refresh');
+serviceRefresh.addEventListener('click', async () => {
+  const feedback = document.querySelector('#service-feedback');
+  const list = document.querySelector('#service-list');
+  serviceRefresh.disabled = true;
+  feedback.textContent = 'A verificar…';
+  try {
+    const response = await fetch('/integrations', {method:'POST', headers});
+    if (!response.ok) throw new Error('Não consegui consultar o estado das integrações.');
+    const {services} = await response.json();
+    list.replaceChildren(...services.map(service => {
+      const row = document.createElement('li');
+      row.textContent = service.name + ' · ' + service.detail;
+      return row;
+    }));
+    feedback.textContent = 'Verificação concluída.';
+  } catch (error) {
+    feedback.textContent = error.message;
+  } finally {
+    serviceRefresh.disabled = false;
+  }
+});
+
 const downloadPanel = document.querySelector('#download-panel');
 const downloadList = document.querySelector('#download-watches');
 let lastDownloadList;
@@ -798,6 +885,248 @@ async function refreshDownloads() {
 
 refreshDownloads();
 setInterval(refreshDownloads, 5000);
+const meetingPanel = document.querySelector('#meeting-panel');
+const meetingForm = document.querySelector('#meeting-capture');
+const meetingStart = document.querySelector('#meeting-start');
+const meetingStop = document.querySelector('#meeting-stop');
+const meetingRetry = document.querySelector('#meeting-retry');
+const meetingFeedback = document.querySelector('#meeting-feedback');
+const meetingRecordings = document.querySelector('#meeting-recordings');
+const meetingChunkMs = 40000;
+const meetingLimitMs = 30 * 60 * 1000;
+const meetingQueueLimit = 24 * 1024 * 1024;
+let meetingSession;
+
+async function meetingRequest(values) {
+  const response = await fetch('/meeting-recording', {
+    method:'POST', headers, body:JSON.stringify(values),
+    signal:AbortSignal.timeout(values.action === 'chunk' ? 120000 : 20000),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error);
+  return result;
+}
+
+function releaseMeetingCapture(session) {
+  clearTimeout(session.timer);
+  session.stream?.getTracks().forEach(track => track.stop());
+  session.stream = undefined;
+  meetingStop.hidden = true;
+  if (session.control && recognition === session.control) {
+    recognition = undefined;
+    dictate.disabled = false;
+    send.disabled = Boolean(requestController);
+    microphoneStatus.textContent = 'Microfone inativo';
+  }
+}
+
+function stopMeeting(session = meetingSession) {
+  if (!session || session.stopped) return;
+  session.stopped = true;
+  if (session.recorder?.state === 'recording') session.recorder.stop();
+  else session.captureDone = true;
+  releaseMeetingCapture(session);
+  if (!session.starting && session.id && !session.failed && session.captureDone) flushMeeting(session);
+}
+
+function startMeetingChunk(session) {
+  const elapsed = performance.now() - session.started;
+  if (elapsed >= meetingLimitMs) {
+    stopMeeting(session);
+    return;
+  }
+  const offset = Math.floor(elapsed);
+  const recorder = new MediaRecorder(session.stream);
+  session.recorder = recorder;
+  const parts = [];
+  recorder.addEventListener('dataavailable', event => {
+    if (event.data.size) parts.push(event.data);
+  });
+  recorder.addEventListener('error', () => {
+    meetingFeedback.textContent = 'Falha na captura. A gravação foi parada.';
+    stopMeeting(session);
+  });
+  recorder.addEventListener('stop', () => {
+    clearTimeout(session.timer);
+    const audio = new Blob(parts, {type:recorder.mimeType});
+    if (audio.size) {
+      session.queue.push({number:++session.captured, offset, audio});
+      session.bytes += audio.size;
+    }
+    if (session.bytes >= meetingQueueLimit || session.captured >= 48) {
+      stopMeeting(session);
+      meetingFeedback.textContent = 'A captura parou para guardar os blocos pendentes.';
+    }
+    if (!session.stopped) {
+      try {
+        startMeetingChunk(session);
+      } catch {
+        stopMeeting(session);
+      }
+    } else {
+      session.captureDone = true;
+    }
+    if (!session.failed) flushMeeting(session);
+  });
+  recorder.start();
+  session.timer = setTimeout(() => {
+    if (recorder.state === 'recording') recorder.stop();
+  }, Math.min(meetingChunkMs, meetingLimitMs - elapsed));
+}
+
+async function audioBase64(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const parts = [];
+  for (let index = 0; index < bytes.length; index += 8192) {
+    parts.push(String.fromCharCode(...bytes.subarray(index, index + 8192)));
+  }
+  return btoa(parts.join(''));
+}
+
+async function flushMeeting(session) {
+  if (session.flushing || session.failed) return;
+  session.flushing = true;
+  meetingRetry.hidden = true;
+  try {
+    while (session.queue.length) {
+      const {number, offset, audio} = session.queue[0];
+      meetingFeedback.textContent = (session.stopped ? 'Microfone parado. A transcrever' : 'A gravar e a transcrever')
+        + ' o bloco ' + number + '…';
+      await meetingRequest({action:'chunk', id:session.id, number, offset, audio:await audioBase64(audio)});
+      session.queue.shift();
+      session.bytes -= audio.size;
+    }
+    if (session.captureDone) {
+      const result = await meetingRequest({action:'finish', id:session.id, chunks:session.captured});
+      meetingFeedback.textContent = result.path
+        ? 'Transcrição guardada e ligada ao evento.'
+        : 'A gravação foi fechada sem texto reconhecido.';
+      meetingSession = undefined;
+      meetingStart.disabled = false;
+      await refreshMeetingRecordings();
+    } else {
+      meetingFeedback.textContent = 'A gravar. Blocos transcritos: ' + session.captured + '.';
+    }
+  } catch (error) {
+    session.failed = true;
+    stopMeeting(session);
+    meetingFeedback.textContent = error.message + ' Podes repetir o processamento dos blocos pendentes.';
+    meetingRetry.hidden = false;
+    refreshMeetingRecordings();
+  } finally {
+    session.flushing = false;
+  }
+}
+
+async function refreshMeetingRecordings() {
+  try {
+    const {recordings} = await meetingRequest({action:'list'});
+    const items = recordings.map(recording => {
+      const item = document.createElement('li');
+      item.textContent = 'Evento ' + recording.event_id + ' · ' + recording.title + ' · ' + recording.status + ' ';
+      if (recording.path) {
+        const link = document.createElement('a');
+        link.href = '/texto?path=' + encodeURIComponent(recording.path);
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'Abrir transcrição';
+        item.append(link);
+      }
+      if ((!meetingSession || meetingSession.failed) && ['a gravar', 'a fechar'].includes(recording.status)) {
+        const recover = taskButton('Guardar blocos recebidos (' + recording.chunks + ')', async () => {
+          recover.disabled = true;
+          try {
+            const info = await meetingRequest({action:'finish', id:recording.id, chunks:recording.chunks});
+            if (meetingSession?.id === recording.id && meetingSession.failed) {
+              meetingSession = undefined;
+              meetingRetry.hidden = true;
+              meetingStart.disabled = false;
+            }
+            meetingFeedback.textContent = info.path
+              ? 'Transcrição recuperada a partir dos blocos guardados.' : 'Gravação fechada sem texto.';
+            await refreshMeetingRecordings();
+          } catch (error) {
+            meetingFeedback.textContent = error.message;
+            recover.disabled = false;
+          }
+        });
+        item.append(recover);
+      }
+      return item;
+    });
+    meetingRecordings.replaceChildren(...items);
+  } catch (error) {
+    meetingFeedback.textContent = error.message || 'Não consegui consultar as gravações.';
+  }
+}
+
+meetingForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (meetingSession || dictate.disabled || recognition || requestController) {
+    meetingFeedback.textContent = 'Termina o pedido, ditado ou gravação em curso primeiro.';
+    return;
+  }
+  meetingStart.disabled = true;
+  dictate.disabled = true;
+  send.disabled = true;
+  const session = {queue:[], bytes:0, captured:0, stopped:false, captureDone:false, starting:true};
+  meetingSession = session;
+  session.control = {stop:() => stopMeeting(session)};
+  recognition = session.control;
+  try {
+    if (typeof MediaRecorder !== 'function' || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error('O navegador não disponibiliza gravação de áudio local.');
+    }
+    const values = new FormData(meetingForm);
+    const result = await meetingRequest({action:'start', event:Number(values.get('event')), consent:values.has('consent')});
+    session.id = result.id;
+    if (!session.stopped) {
+      session.stream = await navigator.mediaDevices.getUserMedia({audio:microphone.value
+        ? {deviceId:{exact:microphone.value}} : true});
+    }
+    session.starting = false;
+    if (session.stopped) {
+      releaseMeetingCapture(session);
+      session.captureDone = true;
+      await flushMeeting(session);
+      return;
+    }
+    session.started = performance.now();
+    meetingForm.elements.consent.checked = false;
+    for (const track of session.stream.getAudioTracks()) {
+      track.addEventListener('ended', () => stopMeeting(session), {once:true});
+    }
+    startMeetingChunk(session);
+    meetingStop.hidden = false;
+    microphoneStatus.textContent = 'Microfone ativo · reunião';
+    meetingFeedback.textContent = 'A gravar ' + result.title + '. Limite de 30 minutos por gravação.';
+  } catch (error) {
+    releaseMeetingCapture(session);
+    if (session.id) {
+      try { await meetingRequest({action:'finish', id:session.id, chunks:0}); } catch {}
+    }
+    meetingSession = undefined;
+    meetingStart.disabled = false;
+    meetingFeedback.textContent = error.message || 'Não consegui iniciar a gravação.';
+  }
+});
+
+meetingStop.addEventListener('click', () => stopMeeting());
+meetingRetry.addEventListener('click', () => {
+  if (!meetingSession) return;
+  meetingSession.failed = false;
+  flushMeeting(meetingSession);
+});
+meetingPanel.addEventListener('toggle', () => {
+  if (meetingPanel.open) refreshMeetingRecordings();
+  else if (meetingSession && !meetingSession.stopped) meetingPanel.open = true;
+});
+window.addEventListener('pagehide', () => {
+  if (!meetingSession) return;
+  meetingSession.stopped = true;
+  releaseMeetingCapture(meetingSession);
+});
+
 const workflowPanel = document.querySelector('#workflow-panel');
 const workflowList = document.querySelector('#workflow-list');
 const workflowFeedback = document.querySelector('#workflow-feedback');
@@ -820,7 +1149,12 @@ async function refreshWorkflows(action = 'list', task, fields = {}) {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error);
     renderWorkflows(result.tasks);
-    if (action !== 'list') workflowFeedback.textContent = action === 'draft' ? 'Rascunho guardado. Revê os dados e as versões dos anexos antes de descarregar.' : '';
+    const messages = {
+      draft: 'Rascunho guardado. Revê os dados e as versões dos anexos.',
+      cancel_send: 'A confirmação foi cancelada. O rascunho continua guardado.',
+      check_send: 'Estado consultado. Vê o resultado no cartão do rascunho.',
+    };
+    if (action !== 'list') workflowFeedback.textContent = messages[action] || '';
   } catch (error) {
     workflowFeedback.textContent = error.message || 'As tarefas estão indisponíveis.';
   } finally {
@@ -833,6 +1167,7 @@ function renderWorkflows(tasks) {
   const activeIds = new Set(tasks.map(task => task.id));
   for (const [id, node] of workflowCards) {
     if (!activeIds.has(id)) {
+      if (voiceTrigger && node.contains(voiceTrigger)) recognition?.stop();
       node.remove();
       workflowCards.delete(id);
     }
@@ -844,10 +1179,15 @@ function renderWorkflows(tasks) {
   if (!workflowCards.size) workflowList.replaceChildren();
   for (const task of tasks) {
     const previous = workflowCards.get(task.id);
-    if (previous?.dataset.revision === String(task.revision)) continue;
+    const version = JSON.stringify([task.revision, task.senders, task.approval, task.submission,
+      task.draft_destinations, task.remote_drafts]);
+    if (previous?.dataset.revision === version) continue;
     const card = taskCard(task);
-    if (previous) previous.replaceWith(card);
-    else {
+    card.dataset.revision = version;
+    if (previous) {
+      if (voiceTrigger && previous.contains(voiceTrigger)) recognition?.stop();
+      previous.replaceWith(card);
+    } else {
       const next = [...workflowList.children].find(node => Number(node.dataset.id) < task.id);
       workflowList.insertBefore(card, next || null);
     }
@@ -867,9 +1207,8 @@ function taskCard(task) {
   const card = document.createElement('section');
   card.className = 'workflow-card';
   card.dataset.id = task.id;
-  card.dataset.revision = task.revision;
   const title = document.createElement('h3');
-  title.textContent = 'Comparar PDFs e preparar email';
+  title.textContent = task.data.kind === 'mail_reply' ? 'Resposta a email local' : 'Comparar PDFs e preparar email';
   const progress = document.createElement('ol');
   task.steps.forEach((step, index) => {
     const row = document.createElement('li');
@@ -879,6 +1218,14 @@ function taskCard(task) {
     progress.append(row);
   });
   card.append(title, progress);
+  for (const source of task.mail_links || []) {
+    const link = document.createElement('a');
+    link.href = source.url;
+    link.textContent = 'Mensagem original · ' + source.label;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    card.append(link);
+  }
 
   const {data, status:taskStatus} = task;
   if (data.error) {
@@ -922,7 +1269,11 @@ function taskCard(task) {
     }
     card.append(comparison);
   }
-  if (data.draft) card.append(draftForm(task));
+  if (data.draft) {
+    const draft = draftForm(task);
+    const review = sendReview(task, draft);
+    card.append(draft, remoteDraftPanel(task, draft), review);
+  }
   const controls = document.createElement('div');
   controls.className = 'workflow-controls';
   if (taskStatus === 'falhou') {
@@ -938,15 +1289,122 @@ function taskCard(task) {
   return card;
 }
 
+function remoteDraftPanel(task, draft) {
+  const section = document.createElement('section');
+  const destinations = task.draft_destinations || [];
+  if (!destinations.length) return section;
+  const title = document.createElement('h4');
+  title.textContent = 'Cópia na pasta de rascunhos';
+  const label = document.createElement('label');
+  label.textContent = 'Conta e pasta ';
+  const select = document.createElement('select');
+  for (const destination of destinations) {
+    select.append(new Option(destination.id + ' · ' + destination.folder, destination.id));
+  }
+  label.append(select);
+  section.append(title, label);
+  for (const item of task.remote_drafts || []) {
+    const state = document.createElement('p');
+    state.textContent = item.account_id + ' · ' + item.state + ' · ' + item.message_id;
+    section.append(state);
+  }
+  const save = taskButton('Guardar rascunho no serviço', () =>
+    refreshWorkflows('store_remote_draft', task, {account:select.value}));
+  draft.addEventListener('input', () => { save.disabled = true; });
+  section.append(save);
+  return section;
+}
+
+function sendReview(task, draft) {
+  const section = document.createElement('section');
+  const {approval, submission, data, senders = []} = task;
+  const locked = submission && submission.status !== 'recusado';
+  if (submission) {
+    const state = document.createElement('p');
+    state.textContent = 'Envio · ' + submission.status
+      + (submission.detail ? ' · ' + submission.detail : '')
+      + (submission.message_id ? ' · ' + submission.message_id : '');
+    section.append(state);
+  }
+  if (locked) {
+    if (submission.status === 'por confirmar') {
+      section.append(taskButton('Verificar em Enviados', () => refreshWorkflows('check_send', task)));
+    }
+    return section;
+  }
+  if (approval && submission?.revision !== task.revision) {
+    const title = document.createElement('h4');
+    title.textContent = 'Rever envio';
+    const contents = document.createElement('pre');
+    const fileNames = (data.attachments || []).map(file => file.name + ' · SHA-256 ' + file.sha256.slice(0, 12));
+    contents.textContent = [
+      'De: ' + approval.sender + ' (' + approval.account + ')',
+      'Para: ' + data.draft.recipient,
+      'Assunto: ' + data.draft.subject,
+      'Anexos: ' + (fileNames.length ? fileNames.join(', ') : 'sem anexos'),
+      '', data.draft.body,
+    ].join('\n');
+    let edited = false;
+    const confirm = taskButton('Confirmar e enviar', async () => {
+      confirm.disabled = true;
+      await refreshWorkflows('send', task, {confirm:true});
+      if (confirm.isConnected && !edited) confirm.disabled = false;
+    });
+    section.append(title, contents, confirm,
+      taskButton('Cancelar confirmação', () => refreshWorkflows('cancel_send', task)));
+    draft.addEventListener('input', () => {
+      edited = true;
+      confirm.disabled = true;
+    });
+    return section;
+  }
+  if (!senders.length) return section;
+  const label = document.createElement('label');
+  label.textContent = 'Conta de envio ';
+  const account = document.createElement('select');
+  for (const sender of senders) {
+    const option = document.createElement('option');
+    option.value = sender.id;
+    option.textContent = sender.id + ' · ' + sender.sender;
+    account.append(option);
+  }
+  label.append(account);
+  const prepare = taskButton('Preparar envio', () => refreshWorkflows('prepare_send', task, {account:account.value}));
+  draft.addEventListener('input', () => { prepare.disabled = true; });
+  section.append(label, prepare);
+  return section;
+}
+
 function draftForm(task) {
   const draft = document.createElement('form');
   const {data} = task;
   const attachments = data.attachments || [];
   taskField(draft, 'recipient', 'Destinatários (separados por vírgulas)', data.draft.recipient, 320);
   taskField(draft, 'subject', 'Assunto', data.draft.subject, 300);
-  taskField(draft, 'body', 'Rascunho', data.draft.body, 30000);
+  const body = taskField(draft, 'body', 'Rascunho', data.draft.body, 30000);
   const paths = taskField(draft, 'attachments', 'Anexos do projeto (um caminho por linha)',
     attachments.map(attachment => attachment.path).join('\n'), 2504);
+  const locked = task.submission && task.submission.status !== 'recusado';
+  if (locked) {
+    for (const field of draft.elements) field.readOnly = true;
+  } else {
+    const speechFeedback = document.createElement('p');
+    speechFeedback.setAttribute('role', 'status');
+    const voice = taskButton('Ditar resposta', () => {
+      if (voiceTrigger === voice && recognition) {
+        voice.disabled = true;
+        recognition.stop();
+        return;
+      }
+      if (dictate.disabled || recognition || requestController) {
+        speechFeedback.textContent = 'Termina o pedido ou o ditado em curso primeiro.';
+        return;
+      }
+      body.dispatchEvent(new Event('input', {bubbles:true}));
+      recordLocalVoice({field:body, trigger:voice, feedback:speechFeedback});
+    });
+    draft.append(voice, speechFeedback);
+  }
 
   if (attachments.length) {
     const versions = document.createElement('ul');
@@ -964,16 +1422,16 @@ function draftForm(task) {
   }
 
   const exportButton = taskButton('Descarregar email (.eml)', () => exportDraft(task));
-  if (data.old && data.new) {
+  if (!locked && data.old && data.new) {
     draft.append(taskButton('Anexar os PDFs comparados', () => {
       const current = paths.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
       paths.value = [...new Set([...current, data.old, data.new])].join('\n');
-      exportButton.disabled = true;
+      paths.dispatchEvent(new Event('input', {bubbles:true}));
       paths.focus();
     }));
   }
+  if (!locked) draft.append(taskButton('Guardar e rever', null, 'submit'));
   draft.append(
-    taskButton('Guardar e rever', null, 'submit'),
     exportButton,
     taskButton('Descarregar texto', () => {
       const values = Object.fromEntries(new FormData(draft));
@@ -986,6 +1444,7 @@ function draftForm(task) {
   draft.addEventListener('input', () => { exportButton.disabled = true; });
   draft.addEventListener('submit', event => {
     event.preventDefault();
+    if (locked) return;
     const fields = Object.fromEntries(new FormData(draft));
     fields.attachments = paths.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     refreshWorkflows('draft', task, fields);

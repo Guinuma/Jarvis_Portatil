@@ -16,6 +16,7 @@ import time
 import webbrowser
 from zipfile import BadZipFile
 from functools import partial
+from email.errors import MessageError
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Event, Thread
@@ -23,32 +24,54 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, quote, urlsplit
 from urllib.request import Request, urlopen
 
-from .integrations.editor import normalize, open_project, project_request, resolve_project
-
-from .integrations.notes import latest_notes, notes_request
-from .integrations.archives import archive_command
-from .integrations.documents import pdf_command
-from .integrations.code_tools import code_command
-from .integrations.code_proposals import proposal_command
-from .integrations.pdf_tables import table_command
-from .integrations.compare import compare_documents, comparison_sources, comparison_text
-from .integrations.office import office_command
-from .integrations.desktop import desktop_query
-from .integrations.organize import organize_files
-from .integrations.project_files import file_command, safe_path
-from .integrations.reminders import COMBINED, parse_reminder
-from .integrations.windows import windows_command
-from .integrations.audio import audio_command
-
-from .agenda import agenda_command, due_alerts
-from .conversation import resolve_reference
-from .downloads import downloads_command
-from .download_watches import check_download_watches, download_updates, watch_command
-from .memory import Memory
-from .local_registers import register_command
-from .project_progress import progress_command
-from .workflows import change_workflow, export_workflow_draft, process_workflow, workflow_command
-from .routines import check_file_rules, daily_routine, file_rule_command, programming_project, run_due, run_now, schedule_programming, tomorrow_at_nine
+from jarvis.agenda import agenda_command, due_alerts
+from jarvis.automation.delete_review import delete_command
+from jarvis.automation.external_actions import action_command
+from jarvis.automation.isolated_runner import runner_command
+from jarvis.automation.windows_ui import windows_ui_command
+from jarvis.conversation import resolve_reference
+from jarvis.download_watches import check_download_watches, download_updates, watch_command
+from jarvis.downloads import downloads_command
+from jarvis.education.reasoning import LocalModelError, local_reasoning_command
+from jarvis.education.study import study_command
+from jarvis.integrations.archives import archive_command
+from jarvis.integrations.audio import audio_command
+from jarvis.integrations.code_proposals import proposal_command
+from jarvis.integrations.code_tools import code_command
+from jarvis.integrations.compare import compare_documents, comparison_sources, comparison_text
+from jarvis.integrations.desktop import desktop_query
+from jarvis.integrations.documents import pdf_command
+from jarvis.integrations.editor import normalize, open_project, project_request, resolve_project
+from jarvis.integrations.http_client import ServiceError
+from jarvis.integrations.notes import latest_notes, notes_request
+from jarvis.integrations.office import office_command
+from jarvis.integrations.organize import organize_files
+from jarvis.integrations.pdf_tables import table_command
+from jarvis.integrations.project_files import file_command, safe_path
+from jarvis.integrations.reminders import COMBINED, parse_reminder
+from jarvis.integrations.service_status import service_status
+from jarvis.integrations.windows import windows_command
+from jarvis.local_registers import register_command
+from jarvis.memory import Memory
+from jarvis.messaging.imap import MailConnectionError, account_mail_command, imported_link, imported_message
+from jarvis.messaging.local_mail import mail_command, mail_view
+from jarvis.messaging.matrix import matrix_command
+from jarvis.messaging.online_mail import online_mail_command
+from jarvis.messaging.smtp import send_status_command
+from jarvis.personal.meals import meal_command
+from jarvis.personal.previews import preview_command
+from jarvis.planning.external_calendar import calendar_command
+from jarvis.planning.meeting_analysis import meeting_analysis_command
+from jarvis.planning.meetings import meeting_command, read_source
+from jarvis.planning.recordings import BODY_LIMIT, recording_request
+from jarvis.project_progress import progress_command
+from jarvis.research.journal import journal_command
+from jarvis.research.sources import source_command
+from jarvis.research.traffic import traffic_command
+from jarvis.research.transit import schedule_command
+from jarvis.research.web import research_command
+from jarvis.routines import check_file_rules, daily_routine, file_rule_command, programming_project, run_due, run_now, schedule_programming, tomorrow_at_nine
+from jarvis.workflows import change_workflow, export_workflow_draft, process_workflow, workflow_command
 
 PACKAGE = Path(__file__).resolve().parent
 ROOT = PACKAGE.parent
@@ -83,6 +106,11 @@ def pdf_links(sources):
     ]
 
 
+def mail_links(paths):
+    return [{"label": f"[{index}] {name}", "url": "/email?path=" + quote(name)}
+            for index, name in enumerate(paths, 1)]
+
+
 class Handler(BaseHTTPRequestHandler):
     def workflow_request(self):
         try:
@@ -103,6 +131,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_content(503, {"error": "Não consegui consultar as tarefas guardadas."})
         for task in tasks:
             task["links"] = pdf_links(task["data"].pop("sources", []))
+            task["mail_links"] = mail_links(task["data"].pop("mail_sources", []))
+            if account_source := task["data"].pop("account_source", None):
+                task["mail_links"].append(imported_link(account_source["account"], account_source["id"], "Email importado"))
         return self.send_content(200, {"tasks": tasks})
 
     def memory_request(self):
@@ -156,11 +187,29 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
         self.end_headers()
         self.wfile.write(body)
 
     def do_GET(self):
         url = urlsplit(self.path)
+        if url.path in {"/email", "/email-conta", "/texto"}:
+            local_hosts = {f"localhost:{self.server.server_port}", f"127.0.0.1:{self.server.server_port}"}
+            if self.headers.get("Host") not in local_hosts or self.headers.get("Sec-Fetch-Site") == "cross-site":
+                return self.send_content(403, {"error": "Abre o conteúdo a partir do JARVIS local."})
+            try:
+                parameters = parse_qs(url.query)
+                if url.path == "/email-conta":
+                    account, = parameters["conta"]
+                    row_id, = parameters["id"]
+                    preview = imported_message(local_memory(), account, row_id)
+                else:
+                    name, = parameters["path"]
+                    reader = mail_view if url.path == "/email" else read_source
+                    preview = reader(ROOT, name)
+                return self.send_content(200, preview.encode("utf-8", errors="replace"), "text/plain; charset=utf-8")
+            except (MessageError, OSError, KeyError, ValueError, RuntimeError, sqlite3.Error):
+                return self.send_content(404, {"error": "Conteúdo indisponível."})
         if url.path == "/pdf":
             local_hosts = {f"localhost:{self.server.server_port}", f"127.0.0.1:{self.server.server_port}"}
             if self.headers.get("Host") not in local_hosts or self.headers.get("Sec-Fetch-Site") == "cross-site":
@@ -193,6 +242,19 @@ class Handler(BaseHTTPRequestHandler):
         allowed = {f"http://127.0.0.1:{self.server.server_port}", f"http://localhost:{self.server.server_port}"}
         if origin not in allowed or self.headers.get_content_type() != "application/json":
             return self.send_content(403, {"error": "Abre a interface local do JARVIS para enviar pedidos."})
+        if self.path == "/meeting-recording":
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= BODY_LIMIT:
+                    raise ValueError("O pedido de gravação excede o limite de tamanho.")
+                data = json.loads(self.rfile.read(length))
+                result = recording_request(local_memory(), ROOT, data)
+                return self.send_content(200, result)
+            except (KeyError, ValueError, TypeError) as error:
+                return self.send_content(400, {"error": str(error)})
+            except Exception:
+                logging.exception("Falha na gravação de reunião.")
+                return self.send_content(503, {"error": "Não consegui guardar a transcrição local. Tenta novamente."})
         if self.path == '/transcribe':
             try:
                 from .integrations.voice import transcribe
@@ -236,6 +298,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_content(200, {"alerts": due_alerts(local_memory())})
             except (OSError, ValueError, sqlite3.Error):
                 return self.send_content(503, {"error": "Agenda local indisponível."})
+        if self.path == "/integrations":
+            hermes_models = HERMES_URL.rsplit("/", 2)[0] + "/models"
+            return self.send_content(200, {"services": service_status(OLLAMA_VERSION_URL, hermes_models, self.key)})
         if self.path == "/download-watches":
             try:
                 return self.send_content(200, download_updates(local_memory()))
@@ -294,7 +359,11 @@ class Handler(BaseHTTPRequestHandler):
             workflow = workflow_command(text, memory, ROOT)
             if workflow:
                 return self.send_content(200, workflow)
+            if preview := (preview_command(text, memory) or delete_command(text, memory, ROOT) or action_command(text, memory)):
+                return self.send_content(200, {"reply": preview, "transient": True})
             memory_reply = memory.command(text)
+            if memory_reply is None:
+                memory_reply = meal_command(text, memory)
             if memory_reply is None:
                 memory_reply = agenda_command(text, memory)
             if memory_reply is None:
@@ -304,12 +373,14 @@ class Handler(BaseHTTPRequestHandler):
             if memory_reply is None:
                 memory_reply = progress_command(text, ROOT)
             if memory_reply is None:
+                memory_reply = study_command(text, memory, ROOT)
+            if memory_reply is None:
                 memory_reply = watch_command(text, memory)
             if memory_reply is None:
                 memory_reply = downloads_command(text, memory)
         except ValueError as error:
             return self.send_content(400, {"error": str(error)})
-        except (OSError, sqlite3.Error, KeyError, TypeError, RuntimeError):
+        except (MessageError, OSError, sqlite3.Error, KeyError, TypeError, RuntimeError):
             return self.send_content(503, {"error": "Não consegui consultar os dados locais."})
         if memory_reply is not None:
             return self.send_content(200, {"reply": memory_reply})
@@ -392,14 +463,49 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_content(200, {"reply": f"Pedi ao VS Code para abrir o projeto {name}."})
 
 
+        try:
+            if result := (research_command(text) or source_command(text) or traffic_command(text)
+                          or online_mail_command(text, memory) or matrix_command(text, memory) or calendar_command(text, memory)):
+                return self.send_content(200, result)
+            if reply := (schedule_command(text, ROOT) or runner_command(text, ROOT)):
+                return self.send_content(200, {"reply": reply, "transient": True})
+            if reply := local_reasoning_command(text, ROOT, memory):
+                return self.send_content(200, {"reply": reply, "transient": True})
+            if result := meeting_analysis_command(text, memory, ROOT):
+                links = [{"label": name, "url": "/texto?path=" + quote(name)} for name in result["documents"]]
+                return self.send_content(200, {"reply": result["reply"], "links": links, "transient": True})
+        except (ValueError, OSError) as error:
+            return self.send_content(400, {"error": str(error)})
+        except LocalModelError as error:
+            return self.send_content(503, {"error": str(error)})
+        except (ServiceError, MailConnectionError) as error:
+            return self.send_content(502, {"error": str(error)})
+        except sqlite3.Error:
+            return self.send_content(503, {"error": "Não consegui consultar as sessões de estudo."})
         sources = []
         try:
+            if result := journal_command(text, memory, ROOT):
+                return self.send_content(200, result)
+            if result := account_mail_command(text, memory):
+                return self.send_content(200, result)
+            if status := send_status_command(text, memory):
+                return self.send_content(200, {"reply": status, "transient": True})
+            if result := meeting_command(text, memory, ROOT):
+                links = []
+                for name in result["documents"]:
+                    if Path(name).suffix.lower() == ".pdf":
+                        links.extend(pdf_links([(name, None)]))
+                    else:
+                        links.append({"label": name, "url": "/texto?path=" + quote(name)})
+                return self.send_content(200, {"reply": result["reply"], "links": links})
             compare = re.fullmatch(r'compara "([^"]+)" com "([^"]+)"[.!]?', text, re.I)
             if compare:
                 difference = compare_documents(ROOT, *compare.groups())
                 return self.send_content(200, {
                     "reply": comparison_text(difference), "links": pdf_links(comparison_sources(difference)),
                 })
+            if result := mail_command(text, ROOT):
+                return self.send_content(200, {"reply": result["reply"], "links": mail_links(result["mail_sources"])})
             file_reply = register_command(text, memory, ROOT, sources)
             if file_reply is None:
                 file_reply = proposal_command(text, memory, ROOT)
@@ -417,6 +523,8 @@ class Handler(BaseHTTPRequestHandler):
                 file_reply = pdf_command(text, ROOT, memory, sources)
             if file_reply is None:
                 file_reply = file_command(text, ROOT)
+        except MailConnectionError as error:
+            return self.send_content(502, {"error": str(error)})
         except (OSError, ValueError, RuntimeError, BadZipFile, sqlite3.Error) as error:
             return self.send_content(400, {"error": f"Ficheiro indisponível: {error}"})
         except Exception:
@@ -427,6 +535,8 @@ class Handler(BaseHTTPRequestHandler):
 
         if sys.platform == "win32":
             try:
+                if visual := windows_ui_command(text, memory):
+                    return self.send_content(200, {"reply": visual, "transient": True})
                 windows_reply = audio_command(text)
                 if windows_reply is None:
                     windows_reply = desktop_query(text, ROOT)

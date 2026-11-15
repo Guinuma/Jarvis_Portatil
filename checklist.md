@@ -34,7 +34,7 @@ O ditado inclui uma alternativa local Whisper para navegadores sem reconheciment
 - [x] Implementar Alt+Shift+D para iniciar e parar o ditado com o JARVIS em foco.
 - [x] Implementar o botão **Ditar** para iniciar e parar a transcrição local em PT-PT e rever o texto antes de enviar.
 - [x] Disponibilizar **Ouvir resposta**, dar preferência a uma voz local PT-PT e expor **Parar leitura** durante a reprodução.
-- [ ] Executar comandos por voz a partir da transcrição. Depende da transcrição e das ferramentas registadas.
+- [x] Executar comandos por voz através de uma transcrição editável e envio explícito para o mesmo fluxo de comandos do chat.
 - [x] Enfileirar frases para leitura automática à medida que o Hermes envia a resposta.
 - [x] Cancelar a fila de leitura e bloquear a leitura das frases seguintes da resposta em curso.
 - [x] Reconhecer «cancela» durante um pedido e fechar a ligação ao Hermes.
@@ -82,7 +82,7 @@ O ditado inclui uma alternativa local Whisper para navegadores sem reconheciment
 ### Agenda e tarefas
 
 - [x] Consultar os compromissos do dia na agenda local do perfil.
-- [ ] Consultar compromissos do dia em calendários externos ligados.
+- [x] Consultar os compromissos do dia em calendários Google autorizados para o perfil, com ligações aos eventos disponíveis.
 - [x] Consultar a disponibilidade num intervalo e apresentar os períodos livres.
 - [x] Criar temporizadores com aviso ao terminar.
 - [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta.
@@ -215,12 +215,12 @@ Consulta os [comandos e dependências da Fase 4](README.md#comandos-da-fase-4).
 
 ### Automatização de aplicações
 
-- [ ] Navegar até ao ecrã ou recurso pedido numa aplicação integrada.
-- [ ] Preencher um formulário e mostrar os valores para revisão. **Parcial. O painel preenche e mostra o rascunho local para revisão.**
-- [ ] Transferir dados entre dois serviços autorizados com mapeamento dos campos.
-- [ ] Gerar um ficheiro como resultado de uma sequência. **Parcial. O fluxo exporta o rascunho em TXT.**
-- [ ] Executar sequências pela API ou por um atalho estável e verificar o resultado das ações importantes durante a execução. **Parcial. O fluxo PDF → rascunho usa a API local.**
-- [ ] Automatizar ações pela interface visual quando a aplicação não tem integração e detetar o estado final das ações importantes.
+- [x] Abrir uma sala Matrix autorizada no navegador e navegar para os recursos de um fluxo Windows configurado.
+- [x] Preencher campos de texto autorizados num formulário Windows via UI Automation e reler os valores para revisão.
+- [x] Transferir uma resposta revista de uma mensagem IMAP para a pasta de rascunhos de uma conta autorizada e mapear campos de rascunhos para APIs configuradas.
+- [x] Gerar um ficheiro como resultado de uma sequência, incluindo o EML do fluxo PDF → rascunho com os anexos revistos.
+- [x] Executar sequências pela API local e aplicar ações HTTPS confirmadas, verificando o estado e os campos no destino.
+- [x] Automatizar navegação numa aplicação Windows através de controlos de acessibilidade configurados e verificar o resultado após cada passo.
 - [x] Interromper a sequência se um resultado esperado não for confirmado e mostrar o passo que falhou. **Implementado no fluxo PDF → rascunho.**
 
 ### Ficheiros e documentos
@@ -236,94 +236,106 @@ Consulta os [comandos e dependências da Fase 4](README.md#comandos-da-fase-4).
 
 ### Pesquisa pessoal
 
-- [ ] Pesquisar emails nas contas autorizadas e ligar os resultados às mensagens originais. Depende da autorização por conta.
+- [x] Pesquisar emails EML na pasta local do projeto por contacto, assunto ou conteúdo e abrir a mensagem original em texto.
+- [x] Pesquisar mensagens importadas de contas IMAP autorizadas por contacto, assunto ou conteúdo e abrir a cópia local.
+- [x] Pesquisar diretamente numa pasta IMAP autorizada e ligar ao correio online quando houver um modelo de URL do fornecedor configurado.
 - [x] Localizar as versões pedidas de um documento, compará-las e apresentar as diferenças com referências às duas origens. Depende da pesquisa e da comparação de documentos. **Implementado no fluxo PDF → rascunho com pesquisa por nome e seleção explícita.**
 
 ### Email e mensagens
 
-- [ ] Ligar os serviços de email e mensagens usados pelo utilizador às contas autorizadas.
-- [ ] Pesquisar uma conversa por contacto, assunto ou conteúdo.
-- [ ] Resumir uma conversa e ligar às mensagens que sustentam o resumo.
-- [ ] Destacar as perguntas que ainda aguardam resposta.
-- [ ] Extrair tarefas mencionadas em mensagens e mostrar as respetivas origens.
-- [ ] Extrair datas mencionadas em mensagens e pedir esclarecimento quando forem ambíguas.
+- [x] Configurar contas e pastas IMAP por perfil e importar mensagens recentes em modo de leitura por TLS.
+- [x] Ler e enviar mensagens de texto em salas Matrix não cifradas autorizadas no perfil.
+- [x] Reconstruir conversas EML locais por referências entre mensagens, mostrar um resumo por excertos e indicar as fontes.
+- [x] Destacar perguntas e pedidos candidatos a seguimento nos EML locais com referências às mensagens. As perguntas assinaladas ficam para revisão.
+- [x] Extrair datas numéricas e expressões temporais de EML locais e pedir confirmação das datas ambíguas.
+- [x] Pesquisar conversas diretamente numa pasta IMAP e mostrar resumos, tarefas e datas com referências.
+- [x] Usar o Ollama local para identificar perguntas possivelmente pendentes pelo contexto da conversa e mostrar o excerto correspondente.
 - [x] Gerar, editar e guardar um rascunho local de email a partir da comparação de PDFs e permitir descarregá-lo em TXT.
-- [ ] Redigir uma resposta a partir de uma conversa do serviço de email e mostrar o rascunho para revisão.
+- [x] Preparar e rever uma resposta a um EML local com destinatário e assunto preenchidos e preservar as referências da conversa na exportação.
+- [x] Preparar uma resposta a uma mensagem recebida por IMAP e revê-la no painel de rascunhos, com opção de exportar em EML.
+- [x] Guardar uma cópia de um rascunho revisto numa pasta IMAP autorizada e guardar a referência no painel.
 - [x] Selecionar ficheiros do projeto como anexos de um rascunho local, rever nomes e versões e exportar o email em EML. O JARVIS pede nova revisão se um ficheiro mudar.
-- [ ] Associar os anexos revistos à mensagem a enviar no serviço de email ligado.
+- [x] Associar aos envios SMTP os anexos revistos e bloquear o envio quando a versão de um ficheiro mudou.
 - [x] Mostrar e permitir editar o destinatário, o assunto e o conteúdo no rascunho local.
-- [ ] Mostrar destinatários, assunto, conteúdo e anexos da versão que será enviada antes de pedir confirmação.
-- [ ] Enviar a versão confirmada e guardar a referência do envio. Depende da pré-visualização e da confirmação.
-- [ ] Responder por voz, permitindo rever a transcrição, o rascunho e o destinatário antes de confirmar. Depende da transcrição e da pré-visualização.
-- [ ] Responder a «já enviaste o email?» consultando o estado no serviço ou na pasta de enviados.
-- [ ] Permitir cancelar um envio antes da confirmação.
+- [x] Mostrar remetente, destinatários, assunto, conteúdo e anexos da versão que será enviada antes de pedir confirmação.
+- [x] Enviar a versão confirmada por SMTP com TLS e guardar a referência e o resultado da tentativa.
+- [x] Ditar o corpo de uma resposta de email com a transcrição local Whisper, rever e editar o texto e o destinatário, e confirmar o envio num passo separado.
+- [x] Responder a «já enviaste o email?» com o estado da tentativa e consultar a pasta Enviados por Message-ID quando o resultado estiver por confirmar.
+- [x] Cancelar a confirmação de envio e manter o rascunho local para edição.
 
 ### Reuniões
 
-- [ ] Preparar notas para uma reunião com ligações para os documentos relevantes.
-- [ ] Transcrever reuniões após obter consentimento e parar a captura ao terminar a transcrição.
-- [ ] Identificar as decisões tomadas na transcrição.
-- [ ] Extrair tarefas da reunião com responsáveis e prazos quando estes forem indicados.
-- [ ] Gerar um resumo com marcas temporais que permitem localizar os excertos relevantes.
-- [ ] Preparar uma mensagem de seguimento a partir das decisões e tarefas.
-- [ ] Associar as notas, a transcrição e o seguimento ao evento ou projeto correto.
+- [x] Preparar notas para um evento da agenda local e ligar os documentos selecionados do projeto.
+- [x] Gravar a reunião pelo microfone após confirmação de consentimento, parar a captura no painel e guardar a transcrição VTT por evento.
+- [x] Agrupar decisões, tarefas, responsáveis e prazos explicitamente marcados em transcrições locais.
+- [x] Inferir decisões e tarefas em transcrições sem marcações explícitas usando o Ollama local, indicar os excertos de origem e incluir responsáveis e prazos presentes nesses excertos.
+- [x] Apresentar um resumo por excertos com marcas temporais de VTT e SRT ou referências a linhas de texto.
+- [x] Preparar uma mensagem de seguimento a partir das decisões e tarefas assinaladas ou de sugestões do modelo local, que ficam identificadas para revisão.
+- [x] Associar as notas, a transcrição e o seguimento ao evento da agenda local e recuperá-los mais tarde.
 
 ### Internet e investigação
 
-- [ ] Pesquisar na web e listar resultados que respondem ao pedido.
-- [ ] Abrir as fontes selecionadas e consultar o conteúdo na origem.
-- [ ] Comparar resultados de várias fontes e indicar onde concordam ou divergem.
-- [ ] Distinguir factos atribuídos a fontes de inferências do JARVIS.
-- [ ] Consultar a meteorologia para o lugar e o momento pedidos e mostrar a origem.
-- [ ] Consultar o trânsito para o trajeto indicado e mostrar a hora da informação.
-- [ ] Consultar horários de transportes para a data e o percurso pedidos.
-- [ ] Consultar preços e indicar a moeda, a data e a fonte.
-- [ ] Consultar notícias sobre um tema e indicar a data e a fonte.
-- [ ] Guardar uma pesquisa com a pergunta, os resultados e as respetivas ligações.
-- [ ] Preparar um relatório com ligações para as fontes usadas em cada conclusão.
+- [x] Pesquisar na web com Brave Search e apresentar resultados com excertos e ligações.
+- [x] Abrir fontes selecionadas no navegador a partir da pesquisa ou de um relatório guardado.
+- [x] Consultar o texto de páginas HTTPS públicas selecionadas e mostrar os excertos e a ligação à origem.
+- [x] Registar concordâncias e divergências fornecidas pelo utilizador, associadas a duas ou mais fontes.
+- [x] Comparar automaticamente até quatro páginas pelo Ollama local e apresentar concordâncias e divergências com citações de fontes diferentes.
+- [x] Distinguir factos atribuídos e inferências nos relatórios de investigação a partir dos tipos indicados pelo utilizador.
+- [x] Separar automaticamente afirmações atribuídas e inferências do modelo na comparação e mostrar apenas itens com citações presentes nos excertos consultados.
+- [x] Consultar meteorologia pelo Open-Meteo para um local, dia e hora suportados e mostrar as ligações à previsão e à geocodificação.
+- [x] Consultar uma rota de carro com dados de trânsito da TomTom e indicar duração estimada, atraso fornecido e hora da consulta.
+- [x] Consultar viagens diretas com hora fixa em GTFS para a data e o percurso pedidos, incluindo exceções do calendário.
+- [x] Consultar preços anunciados em páginas de produto que disponibilizem valor e moeda em dados estruturados e mostrar a origem e a hora da consulta.
+- [x] Consultar notícias sobre um tema e apresentar a data indicada pelo serviço e a fonte de cada resultado.
+- [x] Guardar perguntas de investigação com fontes escolhidas, observações e conclusões por perfil.
+- [x] Preparar um relatório de investigação no chat ou em Markdown com ligações para as fontes usadas em cada conclusão.
 
 ### Programação
 
 - [x] Pesquisar código no projeto autorizado e devolver os ficheiros e linhas relevantes. **Implementado com pesquisa literal e resultados por ficheiro e linha.**
-- [ ] Explicar um erro usando a mensagem e o trecho de código relacionados.
+- [x] Explicar um erro pelo Ollama local usando a mensagem, a linha indicada e o excerto de código autorizado.
 - [x] Preparar uma proposta de alteração para os ficheiros autorizados e mostrar as diferenças para revisão. **Implementado para uma substituição textual localizada num ficheiro.**
 - [x] Aplicar a proposta após aprovação e mostrar os ficheiros alterados. Se um ficheiro tiver mudado desde a revisão, pedir nova revisão antes de aplicar. **Implementado com aprovação por número e verificação da versão do ficheiro.**
-- [ ] Correr os testes relevantes e apresentar os resultados, incluindo eventuais falhas.
+- [x] Executar testes Python unittest do projeto autorizado num contentor local e mostrar a saída e o código de saída.
 - [x] Consultar o estado, o histórico ou o ramo do Git conforme o pedido. **Implementado.**
-- [ ] Resumir um diff e indicar as alterações principais e os ficheiros afetados. **Parcial. Mostra estatísticas por ficheiro das alterações preparadas e por preparar.**
-- [ ] Preparar um pull request com título, descrição e resultados dos testes para revisão.
-- [ ] Executar código em ambiente isolado com limites de acesso ao projeto.
+- [x] Resumir alterações Git preparadas e por preparar, com ficheiros, estatísticas e excertos das linhas alteradas.
+- [x] Preparar um rascunho local de pull request com título, commits, ficheiros afetados e resultados de testes fornecidos pelo utilizador.
+- [x] Executar Python numa cópia só de leitura dos ficheiros versionados, com rede desativada e limites confirmados antes de arrancar.
 
 ### Estudo e trabalho
 
-- [ ] Explicar um tópico com exemplos adequados ao nível pedido.
-- [ ] Criar cartões de estudo a partir da matéria indicada.
-- [ ] Gerar um teste sobre os tópicos escolhidos.
-- [ ] Corrigir respostas e explicar como chegar à solução.
-- [ ] Registar os tópicos em que o utilizador teve dificuldades e recuperá-los na sessão seguinte.
-- [ ] Gerar um plano de estudo que tenha em conta os tópicos, o tempo disponível e a data de avaliação.
-- [ ] Preparar um documento a partir de materiais autorizados e indicar os materiais usados.
+- [x] Explicar um tópico com exemplos de acordo com o nível iniciante, intermédio ou avançado, pelo Ollama local.
+- [x] Criar e rever cartões de estudo a partir de perguntas e respostas fornecidas ou de definições em Markdown e TXT.
+- [x] Gerar um teste de estudo a partir dos cartões de um tópico e guardar as perguntas por perfil.
+- [x] Corrigir respostas do teste por comparação com a referência e mostrar a explicação guardada com o cartão, quando disponível.
+- [x] Avaliar a equivalência de respostas em linguagem livre pelo Ollama local e apresentar uma explicação orientativa junto da referência.
+- [x] Registar dificuldades de estudo por tópico e recuperá-las em sessões posteriores.
+- [x] Gerar um plano de estudo até à data de avaliação com os tópicos e minutos disponíveis por dia, começando pelas dificuldades registadas.
+- [x] Preparar um rascunho em Markdown com o Ollama local a partir de até quatro materiais autorizados e identificar as fontes de cada secção.
 - [x] Acompanhar o progresso de um projeto e mostrar tarefas concluídas, pendentes e próximos prazos. **Implementado a partir do checklist Markdown de um projeto autorizado. Os prazos vêm das datas explícitas nas tarefas.**
 
 ### Vida prática
 
-- [ ] Sugerir receitas a partir dos ingredientes disponíveis e distinguir os que ainda é preciso comprar.
-- [ ] Planear refeições para os dias escolhidos e gerar a lista de ingredientes em falta.
-- [ ] Preparar um plano de viagem com as datas, locais e opções de transporte pedidas.
+- [x] Sugerir receitas da coleção local por número de porções e distinguir as quantidades disponíveis na despensa das que faltam.
+- [x] Planear uma refeição por dia durante o período pedido, descontar o stock entre dias e preparar a lista de compras.
+- [x] Preparar um itinerário local com as datas, locais e opções de transporte fornecidos, incluindo os fusos horários e a duração de cada percurso.
 - [x] Registar itens e quantidades no inventário doméstico por perfil e recuperá-los por nome ou localização.
 - [x] Catalogar recibos PDF do projeto por data e comerciante e abrir os originais a partir da pesquisa.
 - [x] Registar despesas em euros, anulá-las por número e apresentar totais por período e categoria.
-- [ ] Preparar um carrinho e mostrar os artigos, as quantidades e o total para aprovação.
-- [ ] Preparar uma reserva e mostrar as opções, as datas e as condições para aprovação.
-- [ ] Preparar um formulário e mostrar os dados preenchidos para aprovação antes da submissão.
+- [x] Preparar um carrinho local para revisão com vendedor, artigos, quantidades, preços, portes e total quando conhecido.
+- [x] Preparar um rascunho local de reserva com as opções fornecidas, as datas, os preços indicados e as condições para revisão.
+- [x] Preparar um rascunho local de formulário e mostrar os campos preenchidos para revisão.
+- [x] Ligar carrinhos, reservas e formulários a APIs configuradas que aceitam referência idempotente e devolvem estado e campos para verificação.
 
 ### Rotinas e fluxos
 
 - [x] Inserir uma etapa de aprovação que bloqueia o próximo passo até à decisão. Implementado para a confirmação dos PDFs.
 - [x] Persistir o estado das tarefas em curso, incluindo passos concluídos, passo atual e aprovações pendentes, e retomar nesse ponto após reiniciar. Implementado no fluxo PDF → rascunho por perfil.
   - [x] Implementar o acompanhamento persistente de downloads e o aviso de conclusão no painel.
+  - [x] Guardar os blocos transcritos de uma reunião e permitir recuperar os que chegaram ao JARVIS quando a gravação foi interrompida.
 - [x] Permitir repetir apenas o passo em falta após uma falha e manter os passos concluídos registados. Implementado no fluxo PDF → rascunho.
-- [ ] Evitar repetir ações com efeitos externos ao verificar o estado no serviço antes de uma nova tentativa.
+- [x] Guardar a tentativa SMTP antes do envio, bloquear novas tentativas após aceitação ou resultado incerto e permitir a consulta em Enviados.
+- [x] Evitar duplicar rascunhos IMAP, mensagens Matrix e ações HTTPS com referências persistentes e reconciliação no serviço.
 - [x] Cancelar uma tarefa entre dois passos e mostrar o que já aconteceu e o que ficou por executar. **Implementado no painel do fluxo PDF → rascunho.**
 
 ### Painel e acessibilidade
@@ -333,19 +345,22 @@ Consulta os [comandos e dependências da Fase 4](README.md#comandos-da-fase-4).
 
 ### Permissões e privacidade
 
-- [ ] Restringir o acesso às integrações por conta autorizada.
-- [ ] Pedir confirmação antes de enviar mensagens. Depende de poder mostrar os destinatários, o conteúdo e os anexos.
-- [ ] Pedir confirmação antes de efetuar compras. Depende de poder mostrar o vendedor, os artigos e o total.
-- [ ] Pedir confirmação antes de eliminar ficheiros permanentemente. Depende de poder identificar os ficheiros e mostrar o efeito da eliminação.
-- [ ] Invalidar a confirmação quando o conteúdo ou destino da ação muda e pedir nova confirmação.
+- [x] Restringir a importação, consulta e exportação de rascunhos IMAP às contas e pastas autorizadas para o perfil.
+- [x] Restringir o envio SMTP às contas configuradas para o perfil.
+- [x] Pedir confirmação explícita antes de enviar email com a conta, o conteúdo e os anexos revistos.
+- [x] Aplicar permissões por sala Matrix e exigir confirmação explícita de cada mensagem.
+- [x] Rever vendedor, artigos, total e campos do pedido antes de confirmar uma compra numa integração configurada.
+- [x] Exigir confirmação por código antes de eliminar permanentemente um ficheiro individual autorizado e verificar a versão revista.
+- [x] Invalidar a confirmação SMTP quando o rascunho, destinatários, anexos ou configuração de envio mudam e exigir nova revisão.
+- [x] Invalidar confirmações quando a versão do ficheiro, os dados do rascunho ou a configuração do destino mudam.
 
 ### Extensões e manutenção
 
-- [ ] Integrar uma ferramenta por MCP e aplicar as permissões registadas.
-- [ ] Instalar extensões e publicar as ferramentas permitidas no registo.
-- [ ] Desativar extensões e bloquear chamadas às respetivas ferramentas.
-- [ ] Verificar as ligações às integrações e identificar serviços indisponíveis no painel.
-- [ ] Recuperar tarefas após uma falha e reconciliar os efeitos externos já confirmados. **Parcial. O fluxo PDF → rascunho retoma passos locais.**
+- [x] Integrar a ferramenta MCP de metadados de ficheiros e aplicar permissões por conta e raiz autorizada.
+- [x] Instalar a extensão integrada de metadados e publicar as ferramentas autorizadas no registo MCP.
+- [x] Desativar a extensão integrada e retirar as respetivas ferramentas do registo e da execução.
+- [x] Mostrar no painel o estado da ligação ao Ollama, ao Hermes Agent e ao Open-Meteo e indicar se a chave da Brave Search está configurada.
+- [x] Recuperar o estado guardado de tarefas e reconciliar envios SMTP, mensagens Matrix, rascunhos IMAP e ações HTTPS através da referência persistente.
 
 ## Fase 5 — Versão avançada
 

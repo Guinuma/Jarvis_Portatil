@@ -67,7 +67,7 @@ O ensaio real dos 45 minutos foi interrompido e continua pendente.
 - [ ] Confirmar a leitura em voz alta com uma voz portuguesa instalada e a saída de áudio do portátil.
 - [ ] Abrir a escuta por botão e confirmar que o utilizador consegue terminá-la pelo mesmo painel.
 - [ ] Transcrever pedidos com o microfone do portátil em português de Portugal.
-- [ ] Ditar um comando e verificar que a ação correspondente é executada a partir da transcrição.
+- [ ] Ditar um comando, rever o texto e escolher **Enviar transcrição**. Confirmar que o JARVIS usa a versão editada no fluxo de comandos habitual.
 - [x] Enfileirar frases para leitura automática à medida que o Hermes envia a resposta. Validado com síntese simulada.
 - [x] Cancelar a fila de leitura e bloquear a leitura das frases seguintes da resposta em curso. Validado com síntese simulada.
 - [ ] Interromper a voz a meio de uma frase e confirmar que o áudio para imediatamente, incluindo o que já estava em fila.
@@ -112,7 +112,7 @@ O ensaio real dos 45 minutos foi interrompido e continua pendente.
 
 ### Agenda e tarefas
 
-- [ ] Consultar a agenda externa ligada e comparar os compromissos com os do dia solicitado no calendário original.
+- [ ] Consultar a agenda Google autorizada e comparar os compromissos, incluindo um evento de dia inteiro e um recorrente, com os do dia solicitado. Confirmar a recusa de um calendário fora do perfil.
 - [x] Consultar a disponibilidade num intervalo e apresentar os períodos livres. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
 - [x] Criar um temporizador e confirmar o disparo com um intervalo de teste no Chromium.
 - [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta. Validado no Chromium com um intervalo de teste.
@@ -230,7 +230,10 @@ O ensaio real dos 45 minutos foi interrompido e continua pendente.
 - [ ] Transferir dados entre dois serviços autorizados e conferir os campos no destino.
 - [ ] Abrir o ficheiro gerado por uma sequência e conferir os dados esperados.
 - [ ] Executar uma sequência integrada e conferir o resultado de cada ação importante.
-- [ ] Executar uma sequência na interface visual e conferir o estado final após cada ação importante.
+- [ ] Executar uma sequência na interface visual e conferir o estado final após cada ação importante. Interromper o segundo passo na aplicação e confirmar que os seguintes não arrancam.
+- [ ] Preencher um formulário visual com os campos mapeados e conferir os valores relidos. Verificar que controlos de senha, campos desconhecidos e janelas com título ambíguo são recusados.
+- [ ] Abrir uma sala Matrix autorizada no navegador e confirmar o recurso apresentado.
+- [ ] Mapear um rascunho local para uma API de ensaio e comparar o pedido com todos os campos do recurso resultante. Simular uma resposta com campos divergentes ou estado pendente e confirmar que a operação não fica marcada como concluída.
 
 ### Ficheiros e documentos
 
@@ -244,27 +247,56 @@ O ensaio real dos 45 minutos foi interrompido e continua pendente.
 
 ### Email e mensagens
 
+- [ ] Importar mensagens de uma pasta IMAP autorizada duas vezes. Conferir mensagens, destinatários e datas no serviço e confirmar que a segunda importação não cria duplicados e que os estados de leitura não mudam.
+- [ ] Pesquisar uma conta importada por assunto, contacto e conteúdo com acentos. Comparar os resultados e abrir a cópia local. Confirmar que os resultados da conta não entram no histórico da conversa.
+- [ ] Preparar uma resposta a uma mensagem IMAP, conferir destinatário, assunto e referências no EML exportado, e verificar que o serviço não enviou uma mensagem.
+- [ ] Retirar a autorização de uma pasta ou conta. Confirmar que não é possível consultar as cópias ou exportar os rascunhos associados. Repetir com outro perfil e reutilizar o mesmo identificador para uma conta diferente.
 - [ ] Verificar o acesso às conversas autorizadas em cada serviço ligado.
+- [ ] Pesquisar diretamente por assunto, contacto e conteúdo numa pasta IMAP autorizada, incluindo um termo acentuado. Conferir ligações de origem e recusa de uma pasta fora da configuração.
+- [ ] Rever uma conversa IMAP com referências e perguntas respondidas e em aberto. Conferir excertos, datas e resultados orientativos no original.
+- [ ] Guardar uma revisão na pasta de rascunhos do serviço, repetir a operação e confirmar que existe um único Message-ID para essa revisão. Repetir com perda de resposta do servidor.
+- [ ] Ler texto numa sala Matrix autorizada, rever o destino e enviar uma mensagem controlada. Simular perda de resposta e repetir a confirmação. Verificar que a transação continua a produzir um único evento. Recusar sala, conta ou operação de escrita sem autorização.
+- [ ] Pesquisar EML por contacto, assunto e conteúdo. Abrir uma mensagem HTML como texto e confirmar que imagens remotas e scripts ficam inativos.
+- [ ] Juntar EML com referências comuns e manter separadas mensagens independentes com o mesmo assunto. Conferir as fontes do resumo, das perguntas, dos pedidos e das datas. Incluir uma data ambígua e confirmar o pedido de esclarecimento.
+- [ ] Preparar uma resposta a um EML com Reply-To e Message-ID. Rever a resposta e conferir destinatário, assunto, In-Reply-To e References no ficheiro exportado.
 - [ ] Anexar ficheiros a um rascunho local, conferir nomes e versões e verificar destinatários, assunto, texto e anexos ao abrir o EML. Alterar um ficheiro após a revisão e confirmar que a exportação é recusada até ser revisto de novo.
-- [ ] Conferir nomes e versões dos anexos na mensagem do serviço de email antes de autorizar o envio.
+- [ ] Conferir remetente, destinatários, assunto, corpo e versões dos anexos antes de confirmar um envio de teste. Guardar uma alteração ou substituir um anexo depois da revisão e confirmar que o envio exige uma nova revisão.
+- [ ] Confirmar um envio controlado, repetir o pedido e verificar que o serviço aceitou uma única mensagem e que o Message-ID ficou registado.
+- [ ] Simular aceitação parcial dos destinatários e conferir o aviso. Simular uma interrupção depois de o serviço aceitar os dados, reiniciar o JARVIS e verificar que é possível confirmar pelo Message-ID em Enviados sem repetir a tentativa.
+- [ ] Cancelar a confirmação de envio e verificar que o rascunho continua editável e que não há tentativa no serviço.
 - [ ] Cancelar antes de confirmar e verificar no serviço que a mensagem fica por enviar.
 - [ ] Gerar um rascunho local a partir da comparação de PDFs, editar o destinatário, o assunto e o conteúdo, e confirmar que o rascunho guardado e a exportação TXT contêm essas alterações.
 - [ ] Pesquisar conversas de teste por contacto, assunto e conteúdo. Conferir o resumo, as perguntas por responder, as tarefas e as datas com as mensagens originais. Incluir uma data ambígua e verificar o pedido de esclarecimento.
-- [ ] Ditar uma resposta, rever a transcrição, o destinatário e o rascunho, e conferir a referência de envio e a confirmação na pasta de enviados após uma aprovação de teste.
+- [ ] Ditar diretamente no rascunho de email com o Whisper local. Confirmar que a transcrição é inserida no corpo editável, que uma revisão anterior é invalidada, e que o serviço só recebe a mensagem após nova revisão e aprovação de teste.
 
 ### Reuniões
 
-- [ ] Verificar que a captura só começa após consentimento e termina quando a transcrição é parada.
+- [ ] Abrir o painel de reunião sem confirmar consentimento e verificar que a captura não começa. Confirmar consentimento, gravar mais de um bloco e verificar que o microfone físico se desliga ao parar. Abrir o VTT e conferir as marcas temporais e o evento associado.
+- [ ] Interromper a gravação depois de um bloco confirmado. Reabrir o painel, recuperar os blocos recebidos e verificar que não são publicados duas vezes. Simular uma falha na transcrição e tentar enviar novamente o mesmo bloco.
+- [ ] Preparar notas para um evento, abrir as ligações aos documentos e confirmar que notas e fontes continuam associadas ao evento após reabrir a aplicação.
+- [ ] Associar uma transcrição com marcas temporais, decisões e tarefas com responsável e prazo. Conferir os excertos e verificar o seguimento na lista de materiais do evento.
+- [ ] Analisar dois intervalos de uma transcrição sem marcações explícitas. Conferir as sugestões e os excertos de origem, verificar a omissão de responsáveis ou prazos que não constem do texto e confirmar que uma edição da transcrição invalida as sugestões anteriores no seguimento.
 
 ### Internet e investigação
 
+- [ ] Pesquisar na web e consultar notícias com uma chave Brave Search. Conferir as ligações, a fonte e a data indicada. Confirmar que os resultados temporários não entram no histórico guardado.
+- [ ] Ler uma fonte pública HTTPS e conferir o título e os excertos na origem. Incluir redirecionamentos entre fontes públicas e confirmar que endereços locais, privados e redirecionamentos para esses destinos são recusados.
+- [ ] Comparar fontes que concordem e divirjam. Conferir a separação entre afirmações atribuídas e inferências e verificar que uma citação inventada ou atribuída à fonte errada é omitida.
+- [ ] Consultar uma página de produto com preço e moeda em dados estruturados. Conferir valor, moeda e hora da consulta e verificar a mensagem quando os dados são insuficientes.
+- [ ] Consultar trânsito entre duas localidades e entre dois pares de coordenadas. Conferir a duração, o atraso estimado e a hora da consulta. Verificar que a chave TomTom nunca aparece na resposta nem nas ligações.
 - [ ] Abrir os resultados selecionados e conferir o conteúdo na fonte original.
+- [ ] Consultar um GTFS com horários fixos, exceções ao calendário, plataformas ambíguas e uma viagem após a meia-noite. Conferir as horas, o fuso, a sequência de paragens e a exclusão de uma linha que só tem frequência.
+- [ ] Pedir meteorologia atual, diária e horária. Comparar os valores e o fuso horário com a previsão de origem. Pesquisar um nome de local ambíguo e escolher uma das opções.
+- [ ] Guardar uma pesquisa com duas fontes, um facto atribuído, uma inferência e uma divergência. Reabrir a app, recuperar o registo e verificar a ligação correspondente em cada conclusão do relatório Markdown.
 
 ### Programação
 
-- [ ] Verificar os limites de acesso ao projeto durante a execução isolada.
+- [ ] Verificar os limites de acesso ao projeto durante a execução isolada. Usar uma cópia de ensaio, conferir a ausência de rede, o acesso só de leitura e a ausência de ficheiros excluídos.
+- [ ] Executar unittest com um caso aprovado e outro com falha, conferir a saída e o código de saída. Exceder o tempo limite e verificar a limpeza do contentor. Confirmar que a configuração remota do Docker é recusada.
 - [ ] Pesquisar código e conferir os caminhos e números de linha. Rever uma proposta, aprová-la e conferir a alteração. Modificar o ficheiro após a revisão de outra proposta e verificar que a aprovação é recusada.
-- [ ] Conferir o estado, o ramo e o histórico do Git. Comparar as estatísticas apresentadas com as alterações preparadas e por preparar.
+- [ ] Conferir o estado, o ramo e o histórico do Git. Comparar as estatísticas e excertos apresentados com as alterações preparadas e por preparar.
+- [ ] Gerar um rascunho de pull request para uma base local. Conferir commits, ficheiros e resultados fornecidos e confirmar que o JARVIS informa quando a origem e a base não têm commits por propor.
+- [ ] Pedir a explicação de um erro indicando ficheiro, linha e mensagem. Conferir a referência e a explicação com o excerto autorizado e verificar que a aplicação recusa linhas inexistentes e caminhos externos.
 
 ### Rotinas e fluxos
 
@@ -278,17 +310,26 @@ O ensaio real dos 45 minutos foi interrompido e continua pendente.
 
 - [ ] Testar que uma conta não autorizada fica inacessível.
 - [ ] Testar, para cada ação sujeita a confirmação, os casos de aprovação, recusa e cancelamento.
+- [ ] Usar um ficheiro descartável para verificar revisão, código inválido, cancelamento e alteração do conteúdo após revisão. Confirmar que apenas a versão aprovada pode ser eliminada.
+- [ ] Rever compra, reserva e formulário numa API de ensaio. Repetir confirmação com a mesma referência, simular falha depois de a API registar o recurso, reiniciar o JARVIS e confirmar que a consulta recupera o estado sem duplicar a ação. Alterar a configuração e confirmar que a aprovação anterior é invalidada.
 
 ### Extensões e manutenção
 
 - [ ] Verificar que a ferramenta MCP respeita as permissões registadas.
+- [ ] Instalar a extensão de metadados, atribuir o acesso a uma conta de ensaio e conferir o registo MCP. Pedir um caminho externo e confirmar a recusa. Desativar a extensão e confirmar que desaparece do registo e deixa de aceitar chamadas.
 - [ ] Instalar uma extensão e confirmar que as ferramentas permitidas aparecem no registo.
 - [ ] Desativar uma extensão e confirmar que as chamadas às suas ferramentas são recusadas.
-- [ ] Simular a falha de uma integração e verificar que o painel identifica o serviço indisponível.
+- [ ] Simular a falha do Ollama, do Hermes Agent e do Open-Meteo, um de cada vez, e verificar que o painel identifica a ligação afetada. Conferir também a indicação de uma chave Brave Search por configurar.
 
 ### Estudo e trabalho
 
 - [ ] Consultar o progresso de uma fase de um projeto autorizado e conferir as contagens, os itens pendentes, as linhas e os prazos com o checklist original.
+- [ ] Criar cartões em texto e importar definições de um ficheiro do projeto. Rever os cartões e confirmar as referências à origem.
+- [ ] Gerar um teste, editar um cartão depois de o gerar e verificar que a correção mantém as respostas e explicações da versão usada no teste.
+- [ ] Guardar uma dificuldade de estudo, reabrir a app e confirmar que continua disponível. Gerar um plano e conferir datas, minutos e ordem inicial dos tópicos.
+- [ ] Pedir uma explicação do mesmo tópico em dois níveis. Comparar a dificuldade dos exemplos.
+- [ ] Avaliar respostas de teste equivalentes, parciais e incorretas e conferir as explicações com a referência. Confirmar que uma resposta idêntica à referência nunca recebe uma avaliação inferior.
+- [ ] Gerar um documento usando dois materiais autorizados e conferir as indicações de origem em cada secção. Verificar a recusa de um caminho externo ou destino existente e a mensagem quando o modelo local está indisponível.
 
 ### Conversa
 
@@ -299,6 +340,10 @@ O ensaio real dos 45 minutos foi interrompido e continua pendente.
 - [ ] Registar o mesmo artigo em dois locais do inventário, atualizar a quantidade num deles e pesquisar por nome e por local. Reabrir a aplicação e confirmar que os registos persistem no perfil.
 - [ ] Catalogar recibos PDF de dois comerciantes em datas distintas. Pesquisar por comerciante e intervalo de datas e abrir o PDF original a partir do resultado.
 - [ ] Registar despesas em categorias e datas diferentes, incluindo valores com cêntimos. Conferir os totais por categoria e período e confirmar que uma despesa anulada deixa de contar.
+- [ ] Registar stock parcial de um ingrediente, sugerir receitas para duas pessoas e conferir as quantidades disponíveis e em falta. Guardar uma receita e conferir o filtro de ingredientes excluídos.
+- [ ] Criar um plano para dois ou mais dias e confirmar que o stock usado num dia não volta a contar nos dias seguintes. Adicionar a lista de compras duas vezes e verificar que as linhas idênticas aparecem uma vez.
+- [ ] Preparar um itinerário com datas fora de ordem e opções de transporte em fusos diferentes. Conferir a ordem dos dias, as durações e a recusa de uma chegada anterior à partida.
+- [ ] Preparar carrinho, reserva e formulário com dados de exemplo. Conferir quantidades, totais, condições e campos mostrados. Marcar um rascunho como revisto e descartar outro. Confirmar que as operações ficam no perfil local.
 
 ### Teste de aceitação de tarefas em vários passos
 

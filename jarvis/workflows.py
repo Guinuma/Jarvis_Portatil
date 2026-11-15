@@ -6,8 +6,12 @@ from pathlib import Path
 import time
 from uuid import uuid4
 
+from jarvis.messaging.imap import account_draft_allowed, account_reply_input
 from .integrations.compare import compare_documents, comparison_sources, comparison_text
+from jarvis.messaging.local_mail import reply_input
+from jarvis.messaging.remote_drafts import draft_destinations, remote_drafts, store_remote_draft
 from .integrations.mail_draft import export_draft, review_attachments
+from jarvis.messaging.smtp import approval_for, available_senders, public_send, send_reviewed, verify_send_status
 from .integrations.project_files import safe_path, search
 
 REQUEST = re.compile(
@@ -17,9 +21,17 @@ REQUEST = re.compile(
 )
 STEPS = ["Selecionar as versões", "Comparar os PDFs", "Preparar o rascunho"]
 ACTIVE = {"na fila", "em execução"}
+REPLY_STEPS = ["Preparar a resposta"]
 
 
 def workflow_command(text, memory, root):
+    if draft := (account_reply_input(text, memory) or reply_input(text, root)):
+        row = memory.execute(
+            "INSERT INTO workflows (step, status, data) VALUES (1, 'concluída', ?) RETURNING id",
+            (serialize(draft),),
+        )[0]
+        return {"reply": "Rascunho de resposta preparado. Revê-o no painel de tarefas.",
+                "workflow": row["id"]}
     match = REQUEST.fullmatch(text.strip())
     if not match:
         return None
@@ -41,12 +53,26 @@ def serialize(data):
 
 
 def list_workflows(memory):
-    return [
-        {**row, "data": json.loads(row["data"]), "steps": STEPS}
-        for row in memory.execute(
-            "SELECT id, step, status, revision, data FROM workflows ORDER BY id DESC LIMIT 30"
-        )
-    ]
+    tasks = memory.execute("SELECT id, step, status, revision, data FROM workflows ORDER BY id DESC LIMIT 30")
+    visible = []
+    senders = available_senders(memory)
+    destinations = draft_destinations(memory)
+    for task in tasks:
+        data = json.loads(task["data"])
+        if not account_draft_allowed(memory, data):
+            continue
+        if "draft" in data:
+            task["senders"] = senders
+            task["draft_destinations"] = destinations
+            task["remote_drafts"] = remote_drafts(memory, task["id"], task["revision"])
+            task["submission"] = public_send(memory, task["id"])
+            if preparation := data.get("send_approval"):
+                task["approval"] = {key: preparation[key] for key in ("account", "sender")}
+            data.pop("send_approval", None)
+        task["data"] = data
+        task["steps"] = REPLY_STEPS if data.get("kind") == "mail_reply" else STEPS
+        visible.append(task)
+    return visible
 
 
 def current_workflow(memory, request):
@@ -56,7 +82,10 @@ def current_workflow(memory, request):
     rows = memory.execute("SELECT * FROM workflows WHERE id = ? AND revision = ?", (identifier, revision))
     if not rows:
         raise ValueError("A tarefa mudou. Atualiza o painel.")
-    return rows[0]
+    row = rows[0]
+    if not account_draft_allowed(memory, json.loads(row["data"])):
+        raise ValueError("O rascunho não está disponível para as contas autorizadas neste perfil.")
+    return row
 
 
 def export_workflow_draft(memory, root, request):
@@ -64,7 +93,7 @@ def export_workflow_draft(memory, root, request):
     if row["status"] != "concluída":
         raise ValueError("Conclui a preparação do rascunho antes de o descarregar.")
     data = json.loads(row["data"])
-    return export_draft(root, data["draft"], data.get("attachments", []))
+    return export_draft(root, data["draft"], data.get("attachments", []), data.get("thread"))
 
 
 def change_workflow(memory, root, request):
@@ -74,7 +103,20 @@ def change_workflow(memory, root, request):
     row = current_workflow(memory, request)
     identifier, revision = row["id"], row["revision"]
     step, status, data = row["step"], row["status"], json.loads(row["data"])
-    if action == "select" and step == 0 and status == "a rever":
+    if action == "send":
+        send_reviewed(memory, root, row, request.get("confirm"))
+        return list_workflows(memory)
+    if action == "store_remote_draft":
+        store_remote_draft(memory, root, row, request.get("account"))
+        return list_workflows(memory)
+    if action == "check_send":
+        verify_send_status(memory, identifier)
+        return list_workflows(memory)
+    if action == "prepare_send" and status == "concluída" and "draft" in data:
+        data["send_approval"] = approval_for(memory, data["draft"], request["account"])
+    elif action == "cancel_send" and data.get("send_approval"):
+        data.pop("send_approval")
+    elif action == "select" and step == 0 and status == "a rever":
         if not all(isinstance(request[key], str) and request[key].strip() for key in ("old", "new")):
             raise ValueError("Indica as duas versões do PDF.")
         before, after = [safe_path(root, request[key]) for key in ("old", "new")]
@@ -88,7 +130,7 @@ def change_workflow(memory, root, request):
     elif action == "files" and step == 1 and status in {"falhou", "na fila"}:
         data.pop("error", None)
         step, status = 0, "a rever"
-    elif action == "draft" and step == len(STEPS) and status == "concluída":
+    elif action == "draft" and status == "concluída" and "draft" in data:
         limits = {"recipient": 320, "subject": 300, "body": 30_000}
         draft = {key: request[key] for key in limits}
         if (any(not isinstance(value, str) or len(value) > limits[key] for key, value in draft.items())
@@ -98,13 +140,16 @@ def change_workflow(memory, root, request):
         if "attachments" in request:
             data["attachments"] = review_attachments(root, request["attachments"])
         data["draft"] = draft
+        data.pop("send_approval", None)
     elif action == "cancel" and (status in ACTIVE or status in {"a rever", "falhou"}):
         status = "cancelada"
     else:
         raise ValueError("Esta ação já não está disponível para a tarefa.")
     updated = memory.execute(
         """UPDATE workflows SET step=?, status=?, data=?, revision=revision+1, claim=NULL, lease=NULL
-           WHERE id=? AND revision=? RETURNING id""",
+           WHERE id=? AND revision=? AND NOT EXISTS (
+               SELECT 1 FROM mail_sends WHERE workflow_id=workflows.id AND status<>'recusado'
+           ) RETURNING id""",
         (step, status, serialize(data), identifier, revision),
     )
     if not updated:
