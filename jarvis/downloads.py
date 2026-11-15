@@ -13,12 +13,16 @@ CATEGORIES = {
 }
 
 
+def downloads_root():
+    return Path(os.environ.get("JARVIS_DOWNLOADS_DIR") or Path.home() / "Downloads").resolve()
+
+
 def downloads_command(text, memory):
     command = text.casefold().rstrip(".!?")
     approval = re.fullmatch(r"aprova o plano de downloads (\d+)", command)
     if command != "previsualiza a organização de downloads" and not approval:
         return None
-    root = Path(os.environ.get("JARVIS_DOWNLOADS_DIR") or Path.home() / "Downloads").resolve(strict=True)
+    root = downloads_root()
     if command == "previsualiza a organização de downloads":
         files = []
         for path in sorted(root.iterdir()):

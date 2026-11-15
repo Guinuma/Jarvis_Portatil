@@ -24,6 +24,10 @@ body[data-busy] .reactor::before{animation-duration:6s} @keyframes rotate{to{tra
 .bubble.user{align-self:flex-end;background:#10364b}.bubble.assistant{align-self:flex-start}
 form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-top:8px}#memory-panel{margin-top:12px}#prompt{width:100%;min-width:0;color:var(--text);background:#050f1a;border:1px solid var(--line);border-radius:8px;padding:10px}.submit{color:#001621;background:var(--cyan);font-weight:700}
 .voice-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;color:var(--muted)}
+#workflow-panel{margin-top:12px}.workflow-card{border-top:1px solid var(--line);padding:10px 0}
+.workflow-card form,.workflow-controls{display:flex;flex-wrap:wrap;gap:8px;margin:.6rem 0}
+.workflow-card form label{display:grid;flex:1 1 100%;gap:4px}.workflow-card textarea{min-height:10rem}
+.workflow-card pre{white-space:pre-wrap;overflow-wrap:anywhere}.workflow-card a{color:var(--cyan)}
 #activity{padding-left:19px;color:var(--muted);overflow-wrap:anywhere}li{margin:0 0 .6em}#notice{margin:10px 0 0;color:#ffb890}#notice:empty{display:none}
 @media(max-width:640px){main{grid-template-columns:1fr;padding:18px 12px}.reactor{width:126px}header{padding:12px}.panel{padding:12px}}
 @media(prefers-reduced-motion:reduce){.reactor::before,.reactor::after{animation:none}}
@@ -62,6 +66,10 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
     <p id="speech-caption" role="status" hidden></p>
     <p id="transcript-preview" role="status"></p>
     <div id="reminders" role="log" aria-label="Avisos de lembretes"></div>
+    <details id="download-panel" hidden>
+      <summary>Avisos de downloads</summary>
+      <ul id="download-watches"></ul>
+    </details>
     <details id="memory-panel">
       <summary>Memórias</summary>
       <label>Memória guardada <select id="memory-record"><option value="">Nova memória</option></select></label>
@@ -85,6 +93,11 @@ form{display:flex;gap:8px}#memory-form{flex-wrap:wrap;align-items:center;margin-
         <button type="submit">Agendar</button>
       </form>
       <ul id="routine-history"></ul>
+    </details>
+    <details id="workflow-panel">
+      <summary>Tarefas em vários passos</summary>
+      <p id="workflow-feedback" role="status"></p>
+      <div id="workflow-list"></div>
     </details>
     <p id="notice" role="alert"></p>
   </section>
@@ -579,6 +592,7 @@ form.addEventListener('submit', async event => {
     const local = response.headers.get('Content-Type')?.startsWith('application/json');
     const result = local ? await response.json() : null;
     const reply = local ? result.reply : await readReply(response, answer, speech);
+    if (result?.workflow) workflowPanel.open = true;
     if (result?.reminder) {
       if (previous && pendingReminder !== previous) throw new Error('O lembrete anterior já disparou.');
       if (previous) window.clearTimeout(previous.timer);
@@ -754,6 +768,271 @@ async function checkAgendaAlerts() {
   } catch {}
 }
 setInterval(checkAgendaAlerts, 10000);
+
+const downloadPanel = document.querySelector('#download-panel');
+const downloadList = document.querySelector('#download-watches');
+let lastDownloadList;
+
+async function refreshDownloads() {
+  try {
+    const response = await fetch('/download-watches', {method:'POST', headers});
+    if (!response.ok) return;
+    const {watches, alerts} = await response.json();
+    const snapshot = JSON.stringify(watches);
+    if (snapshot !== lastDownloadList) {
+      lastDownloadList = snapshot;
+      downloadPanel.hidden = !watches.length;
+      downloadList.replaceChildren(...watches.map(watch => {
+        const item = document.createElement('li');
+        item.textContent = 'Aviso ' + watch.id + ' · ' + watch.name + ' · ' + watch.status;
+        return item;
+      }));
+    }
+    for (const alert of alerts) {
+      const item = document.createElement('p');
+      item.textContent = 'Download concluído: ' + alert.name;
+      document.querySelector('#reminders').append(item);
+    }
+  } catch {}
+}
+
+refreshDownloads();
+setInterval(refreshDownloads, 5000);
+const workflowPanel = document.querySelector('#workflow-panel');
+const workflowList = document.querySelector('#workflow-list');
+const workflowFeedback = document.querySelector('#workflow-feedback');
+const workflowCards = new Map();
+let workflowPending;
+
+async function refreshWorkflows(action = 'list', task, fields = {}) {
+  if (workflowPending && action === 'list') return;
+  while (workflowPending) await workflowPending;
+  const request = fetch('/workflows', {
+    method:'POST', headers,
+    body: JSON.stringify({action, id:task?.id, revision:task?.revision, ...fields}),
+  });
+  let releaseWorkflow;
+  workflowPending = new Promise(resolve => {
+    releaseWorkflow = resolve;
+  });
+  try {
+    const response = await request;
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    renderWorkflows(result.tasks);
+    if (action !== 'list') workflowFeedback.textContent = action === 'draft' ? 'Rascunho guardado. Revê os dados e as versões dos anexos antes de descarregar.' : '';
+  } catch (error) {
+    workflowFeedback.textContent = error.message || 'As tarefas estão indisponíveis.';
+  } finally {
+    workflowPending = undefined;
+    releaseWorkflow();
+  }
+}
+
+function renderWorkflows(tasks) {
+  const activeIds = new Set(tasks.map(task => task.id));
+  for (const [id, node] of workflowCards) {
+    if (!activeIds.has(id)) {
+      node.remove();
+      workflowCards.delete(id);
+    }
+  }
+  if (!tasks.length) {
+    workflowList.textContent = 'Ainda não há tarefas.';
+    return;
+  }
+  if (!workflowCards.size) workflowList.replaceChildren();
+  for (const task of tasks) {
+    const previous = workflowCards.get(task.id);
+    if (previous?.dataset.revision === String(task.revision)) continue;
+    const card = taskCard(task);
+    if (previous) previous.replaceWith(card);
+    else {
+      const next = [...workflowList.children].find(node => Number(node.dataset.id) < task.id);
+      workflowList.insertBefore(card, next || null);
+    }
+    workflowCards.set(task.id, card);
+  }
+}
+
+function taskButton(label, callback, type = 'button') {
+  const button = document.createElement('button');
+  button.type = type;
+  button.textContent = label;
+  if (callback) button.addEventListener('click', callback);
+  return button;
+}
+
+function taskCard(task) {
+  const card = document.createElement('section');
+  card.className = 'workflow-card';
+  card.dataset.id = task.id;
+  card.dataset.revision = task.revision;
+  const title = document.createElement('h3');
+  title.textContent = 'Comparar PDFs e preparar email';
+  const progress = document.createElement('ol');
+  task.steps.forEach((step, index) => {
+    const row = document.createElement('li');
+    const state = index < task.step ? 'concluído' : index === task.step ? task.status : 'planeado';
+    row.textContent = step + ' · ' + state;
+    if (index === task.step) row.setAttribute('aria-current', 'step');
+    progress.append(row);
+  });
+  card.append(title, progress);
+
+  const {data, status:taskStatus} = task;
+  if (data.error) {
+    const error = document.createElement('p');
+    error.textContent = data.error;
+    card.append(error);
+  }
+  if (task.step === 0 && taskStatus === 'a rever') {
+    const selector = document.createElement('form');
+    const options = document.createElement('datalist');
+    options.id = 'pdf-versions-' + task.id;
+    for (const name of data.candidates) {
+      const option = document.createElement('option');
+      option.value = name;
+      options.append(option);
+    }
+    selector.append(options);
+    taskField(selector, 'old', 'PDF anterior no projeto', data.old || '', 500, options.id);
+    taskField(selector, 'new', 'PDF atual no projeto', data.new || '', 500, options.id);
+    selector.append(taskButton('Confirmar ficheiros', null, 'submit'));
+    selector.addEventListener('submit', event => {
+      event.preventDefault();
+      refreshWorkflows('select', task, Object.fromEntries(new FormData(selector)));
+    });
+    card.append(selector);
+  }
+  if (data.comparison) {
+    const comparison = document.createElement('details');
+    const heading = document.createElement('summary');
+    heading.textContent = 'Ver comparação';
+    const report = document.createElement('pre');
+    report.textContent = data.comparison;
+    comparison.append(heading, report);
+    for (const source of task.links) {
+      const link = document.createElement('a');
+      link.href = source.url;
+      link.textContent = source.label;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      comparison.append(link, document.createElement('br'));
+    }
+    card.append(comparison);
+  }
+  if (data.draft) card.append(draftForm(task));
+  const controls = document.createElement('div');
+  controls.className = 'workflow-controls';
+  if (taskStatus === 'falhou') {
+    controls.append(taskButton('Repetir este passo', () => refreshWorkflows('retry', task)));
+  }
+  if (task.step === 1 && ['falhou', 'na fila'].includes(taskStatus)) {
+    controls.append(taskButton('Corrigir ficheiros', () => refreshWorkflows('files', task)));
+  }
+  if (['a rever', 'na fila', 'em execução', 'falhou'].includes(taskStatus)) {
+    controls.append(taskButton('Cancelar tarefa', () => refreshWorkflows('cancel', task)));
+  }
+  card.append(controls);
+  return card;
+}
+
+function draftForm(task) {
+  const draft = document.createElement('form');
+  const {data} = task;
+  const attachments = data.attachments || [];
+  taskField(draft, 'recipient', 'Destinatários (separados por vírgulas)', data.draft.recipient, 320);
+  taskField(draft, 'subject', 'Assunto', data.draft.subject, 300);
+  taskField(draft, 'body', 'Rascunho', data.draft.body, 30000);
+  const paths = taskField(draft, 'attachments', 'Anexos do projeto (um caminho por linha)',
+    attachments.map(attachment => attachment.path).join('\n'), 2504);
+
+  if (attachments.length) {
+    const versions = document.createElement('ul');
+    versions.setAttribute('aria-label', 'Versões guardadas dos anexos');
+    for (const attachment of attachments) {
+      const row = document.createElement('li');
+      const version = document.createElement('code');
+      version.textContent = attachment.sha256.slice(0, 12);
+      version.title = attachment.sha256;
+      row.textContent = attachment.name + ' · ' + attachment.size.toLocaleString('pt-PT') + ' bytes · SHA-256 ';
+      row.append(version);
+      versions.append(row);
+    }
+    draft.append(versions);
+  }
+
+  const exportButton = taskButton('Descarregar email (.eml)', () => exportDraft(task));
+  if (data.old && data.new) {
+    draft.append(taskButton('Anexar os PDFs comparados', () => {
+      const current = paths.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      paths.value = [...new Set([...current, data.old, data.new])].join('\n');
+      exportButton.disabled = true;
+      paths.focus();
+    }));
+  }
+  draft.append(
+    taskButton('Guardar e rever', null, 'submit'),
+    exportButton,
+    taskButton('Descarregar texto', () => {
+      const values = Object.fromEntries(new FormData(draft));
+      saveDraftFile(new Blob(
+        ['Para: ', values.recipient, '\nAssunto: ', values.subject, '\n\n', values.body],
+        {type:'text/plain;charset=utf-8'},
+      ), task.id, 'txt');
+    }),
+  );
+  draft.addEventListener('input', () => { exportButton.disabled = true; });
+  draft.addEventListener('submit', event => {
+    event.preventDefault();
+    const fields = Object.fromEntries(new FormData(draft));
+    fields.attachments = paths.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    refreshWorkflows('draft', task, fields);
+  });
+  return draft;
+}
+
+async function exportDraft(task) {
+  try {
+    const response = await fetch('/workflows', {
+      method:'POST', headers,
+      body:JSON.stringify({action:'export', id:task.id, revision:task.revision}),
+    });
+    if (!response.ok) throw new Error((await response.json()).error);
+    saveDraftFile(await response.blob(), task.id, 'eml');
+    workflowFeedback.textContent = '';
+  } catch (error) {
+    workflowFeedback.textContent = error.message || 'Não consegui descarregar o rascunho.';
+  }
+}
+
+function saveDraftFile(content, identifier, extension) {
+  const url = URL.createObjectURL(content);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'jarvis-rascunho-' + identifier + '.' + extension;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function taskField(container, name, caption, value, limit, suggestions) {
+  const label = document.createElement('label');
+  label.textContent = caption;
+  const field = document.createElement(['body', 'attachments'].includes(name) ? 'textarea' : 'input');
+  field.name = name;
+  field.value = value;
+  field.maxLength = limit;
+  field.required = !['recipient', 'attachments'].includes(name);
+  if (suggestions) field.setAttribute('list', suggestions);
+  label.append(field);
+  container.append(label);
+  return field;
+}
+
+workflowPanel.addEventListener('toggle', () => { if (workflowPanel.open) refreshWorkflows(); });
+setInterval(() => { if (workflowPanel.open) refreshWorkflows(); }, 1500);
+
 async function loadVoiceSettings() {
   try {
     const response = await fetch('/memory', {method:'POST', headers, body:JSON.stringify({action:'list'})});

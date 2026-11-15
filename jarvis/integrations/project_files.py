@@ -25,7 +25,7 @@ def safe_path(root, name):
     return path
 
 
-def search(root, query, content):
+def search(root, query, content, *, suffix=None):
     matches = []
     for folder, dirs, files in os.walk(root):
         parent = Path(folder)
@@ -34,6 +34,8 @@ def search(root, query, content):
         for name in sorted(files):
             path = parent / name
             if path.resolve().parent != parent or path.is_symlink():
+                continue
+            if suffix is not None and path.suffix.lower() != suffix:
                 continue
             if content:
                 if path.suffix.lower() not in TEXT_TYPES:

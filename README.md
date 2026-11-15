@@ -2,7 +2,7 @@
 
 Assistente de voz local no Windows com uma interface controlada por gestos da webcam.
 
-Vê o [checklist de desenvolvimento](checklist.md) para acompanhar as cinco fases do projeto. A validação da Fase 2 fica a cargo do utilizador: [guião completo de testes manuais](docs/TESTES_FASE_2.md).
+Acompanha as cinco fases no [checklist de implementação](checklist.md). Os ensaios e os resultados estão no [checklist de testes](docs/CHECKLIST_TESTES.md), que inclui o [guião manual da Fase 2](docs/TESTES_FASE_2.md).
 
 ## Estrutura do repositório
 
@@ -90,6 +90,43 @@ Para organizar ficheiros dentro do projeto, usa `Renomeia "rascunho.txt" para "n
 - **Downloads:** «Previsualiza a organização de Downloads» mostra um plano. Revê-o e usa «Aprova o plano de Downloads 1» com o número recebido. Para testar noutra pasta, define `JARVIS_DOWNLOADS_DIR` antes de arrancar.
 - **Windows:** «Consulta a bateria», «Consulta o armazenamento da unidade C», «Faz uma captura de ecrã», «Mostra os monitores» e `Move a janela "Calculadora" para o monitor 2`. As capturas são guardadas na pasta `capturas/` do projeto e requerem Pillow. Usa «Ativa o modo de foco» ou «Consulta o modo de foco» para controlar a sessão de concentração. Usa `Lê a seleção da janela "título"` numa aplicação que exponha a seleção à acessibilidade do Windows.
 
+### Comandos da Fase 4
+
+Usa caminhos relativos à pasta do JARVIS. A pesquisa de código e as consultas Git também aceitam o sufixo `no projeto "Nome autorizado"`. Para ativar os formatos de documentos, instala as dependências opcionais com `python -m pip install pypdf python-docx openpyxl python-pptx pdfplumber`.
+
+| Pedido | Exemplo |
+| --- | --- |
+| Comparar PDFs e preparar um rascunho | `Compara versões do PDF "orçamento" e prepara um email` |
+| Comparar dois documentos | `Compara "anterior.pdf" com "atual.pdf"` |
+| Criar um documento | `Cria documento "notas.docx" com ["Título","Primeiro parágrafo"]` |
+| Editar um parágrafo | `Edita documento "notas.docx" com {"2":"Texto revisto"}` |
+| Criar ou editar uma folha | `Cria folha "resumo.xlsx" com {"folha":"Resumo","células":{"A1":10,"A2":"=A1*2"}}` |
+| Criar uma apresentação | `Cria apresentação "reuniao.pptx" com [{"título":"Abertura","texto":"Agenda do dia"}]` |
+| Editar um diapositivo | `Edita apresentação "reuniao.pptx" com {"1":{"título":"Reunião de projeto","texto":"Agenda revista"}}` |
+| Extrair uma tabela | `Extrai a tabela 1 da página 2 de "orçamento.pdf" para "tabela.csv"` |
+| Acompanhar um download | `Avisa-me quando o download "relatorio.pdf" acabar` |
+| Cancelar um aviso | `Cancela o aviso de download 1` |
+| Registar um artigo no inventário | `Regista no inventário "Pilhas AA" em "Gaveta da cozinha" quantidade 8` |
+| Consultar o inventário | `Consulta o inventário nome "pilhas"` ou `Consulta o inventário local "cozinha"` |
+| Catalogar e consultar recibos | `Regista recibo "recibos/compra.pdf" de "Mercado" em 2026-11-15` e `Procura recibos de "Mercado"` |
+| Registar uma despesa | `Regista despesa 12,45 euros em "Mercado" na categoria "Alimentação" em 2026-11-15` |
+| Consultar despesas | `Mostra despesas de 2026-11-01 a 2026-11-15` com `na categoria "Alimentação"` opcional |
+| Anular uma despesa | `Anula a despesa 1` |
+| Consultar o checklist do projeto | `Mostra o progresso do projeto na fase 4` |
+| Pesquisar código | `Procura código "schedule_programming"` |
+| Consultar o Git | `Estado do Git`, `histórico do Git`, `ramo do Git`, `diff do Git` |
+| Propor e aprovar uma alteração | `Propõe alteração em "jarvis/app.py" com {"antes":"trecho original","depois":"trecho revisto"}`, seguido de `Aplica a proposta 1` ou `Descarta a proposta 1` |
+
+No painel **Tarefas em vários passos**, confirma os dois PDFs para iniciar a comparação. Podes corrigir os caminhos antes de comparar, cancelar a tarefa ou repetir um passo que falhou. O painel mantém os passos concluídos e o rascunho por perfil após reiniciar. O rascunho tem campos editáveis para destinatários, assunto e conteúdo. Usa **Guardar e rever** para confirmar os nomes e as versões dos anexos do projeto. O painel aceita até cinco ficheiros, com 10 MB no total. **Descarregar email (.eml)** exporta a versão guardada com os anexos. Se um anexo mudar, guarda e revê a nova versão. O TXT continua disponível para exportar só o texto.
+
+Inventário, recibos e despesas ficam guardados por perfil. Registar de novo um artigo no mesmo local atualiza a quantidade. Os recibos continuam na pasta original. A consulta de despesas sem datas usa o mês corrente até hoje.
+
+O aviso acompanha o nome final de um ficheiro na pasta Downloads (ou na pasta definida em `JARVIS_DOWNLOADS_DIR`). O pedido sem nome é suficiente quando existe um único download com nome provisório reconhecível. Para nomes como `Unconfirmed 123.crdownload`, indica o nome final. O JARVIS assinala a conclusão quando o ficheiro final está estável e deixa de existir um marcador temporário conhecido para esse nome. O painel conserva o estado e os avisos concluídos após reiniciar.
+
+O resumo de progresso lê `checklist.md` ou `README.md` no projeto autorizado e mostra as linhas de origem. Os próximos prazos são detetados em tarefas em aberto que incluam `prazo AAAA-MM-DD`.
+
+A comparação apresenta excertos das secções alteradas e aponta para as páginas dos PDFs. A extração de tabelas usa a grelha detetada na página e confirma a estrutura do CSV por releitura. Confere a grelha extraída com o PDF, sobretudo se a estrutura visual for complexa. Para PDFs digitalizados, prepara primeiro uma versão com texto selecionável. As fórmulas são guardadas e relidas no XLSX. Abre-o numa aplicação de folha de cálculo para calcular os resultados.
+
 ## Verificar a base local
 
 Com o Ollama aberto, corre `python -m scripts.check_local --ollama-only`. O diagnóstico confirma que o Ollama está a responder e que o modelo instalado anuncia suporte a ferramentas. O modelo predefinido é `qwen3:8b`. Para verificar outro modelo instalado, passa `--model nome:versão`. O Hermes 3 é uma opção de modelo a avaliar.
@@ -159,38 +196,4 @@ Para usar o microfone, carrega em **Ditar pergunta**, permite o acesso ao microf
 | 3. Integrar a voz | O resumo é lido em voz alta e o mesmo cartão pode dar contexto a uma pergunta por voz. |
 | 4. Preparar a instalação | Uma pessoa consegue montar e testar o protótipo com as instruções do repositório. |
 
-## Checklist
-
-### 1. Validar a base
-
-- [x] Verificar que Python e Ollama estão disponíveis no portátil.
-- [x] Iniciar o servidor original do H.O.L.O e confirmar que a API devolve as duas notas de exemplo. Revisão testada: `55626ff`.
-- [x] Pedir um resumo em português ao modelo local `qwen3:8b` pelo Ollama.
-- [x] Correr o teste integrado em `?probe=1` no Edge (26/26) e abrir uma nota com o rato.
-- [ ] Testar os gestos com a webcam física.
-- [ ] Executar o Jarvis no Windows e confirmar entrada de microfone e saída de áudio em português.
-- [ ] Inspecionar o fluxo de chat e voz do Jarvis para identificar por onde enviar contexto de um cartão e ler a resposta.
-
-### 2. Ligar o gesto ao modelo
-
-- [x] Fixar a revisão do H.O.L.O usada no protótipo e preservar a licença e os créditos.
-- [x] Reutilizar a ação de resumo do H.O.L.O para enviar a nota selecionada a uma rota local.
-- [x] Implementar o resumo no Ollama e a apresentação do resultado no painel.
-- [x] Mostrar o estado de processamento e tratar pedidos repetidos, Ollama indisponível e modelo em falta.
-- [x] Confirmar que a rota local resume uma nota de exemplo e trata uma nota vazia e um modelo em falta.
-- [x] Confirmar no Edge que o botão gera e mostra um resumo de uma nota de exemplo.
-
-### 3. Integrar a voz
-
-- [x] Adicionar a reprodução pelo navegador e testar a seleção de voz local e a mensagem quando falta uma voz.
-- [ ] Ouvir um resumo no portátil com uma voz portuguesa instalada.
-- [x] Usar a nota aberta como contexto de uma pergunta escrita e confirmar a resposta no Edge.
-- [x] Adicionar ditado local ao campo de pergunta e testar transcrição e cancelamento com reconhecimento simulado.
-- [ ] Confirmar ditado em português com o microfone físico e um pacote local instalado.
-- [ ] Validar a sequência completa com uma nota de exemplo, incluindo a troca de cartão entre pedidos.
-
-### 4. Preparar a instalação
-
-- [ ] Documentar a configuração e o arranque no Windows, incluindo a instalação inicial dos modelos.
-- [ ] Repetir o teste com a Internet desligada depois de descarregar as dependências.
-- [ ] Registar os passos para resolver problemas de câmara, microfone ou Ollama.
+O progresso do protótipo está no [checklist de implementação](checklist.md#protótipo-holo-hands) e no [checklist de testes](docs/CHECKLIST_TESTES.md#protótipo-holo-hands).

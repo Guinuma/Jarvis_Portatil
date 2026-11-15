@@ -28,6 +28,11 @@ from .integrations.editor import normalize, open_project, project_request, resol
 from .integrations.notes import latest_notes, notes_request
 from .integrations.archives import archive_command
 from .integrations.documents import pdf_command
+from .integrations.code_tools import code_command
+from .integrations.code_proposals import proposal_command
+from .integrations.pdf_tables import table_command
+from .integrations.compare import compare_documents, comparison_sources, comparison_text
+from .integrations.office import office_command
 from .integrations.desktop import desktop_query
 from .integrations.organize import organize_files
 from .integrations.project_files import file_command, safe_path
@@ -38,7 +43,11 @@ from .integrations.audio import audio_command
 from .agenda import agenda_command, due_alerts
 from .conversation import resolve_reference
 from .downloads import downloads_command
+from .download_watches import check_download_watches, download_updates, watch_command
 from .memory import Memory
+from .local_registers import register_command
+from .project_progress import progress_command
+from .workflows import change_workflow, export_workflow_draft, process_workflow, workflow_command
 from .routines import check_file_rules, daily_routine, file_rule_command, programming_project, run_due, run_now, schedule_programming, tomorrow_at_nine
 
 PACKAGE = Path(__file__).resolve().parent
@@ -66,7 +75,36 @@ def local_memory():
     return Memory(directory, os.environ.get("JARVIS_PROFILE", "default"))
 
 
+def pdf_links(sources):
+    return [
+        {"label": name + (f" · página {number}" if number else ""),
+         "url": "/pdf?path=" + quote(name) + (f"#page={number}" if number else "")}
+        for name, number in sources
+    ]
+
+
 class Handler(BaseHTTPRequestHandler):
+    def workflow_request(self):
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= 192000:
+                raise ValueError("Pedido inválido.")
+            data = json.loads(self.rfile.read(length))
+            memory = local_memory()
+            if data["action"] == "export":
+                content = export_workflow_draft(memory, ROOT, data)
+                return self.send_content(200, content, "message/rfc822")
+            tasks = change_workflow(memory, ROOT, data)
+        except (ValueError, OSError, RuntimeError) as error:
+            return self.send_content(400, {"error": str(error)})
+        except (TypeError, KeyError, AttributeError):
+            return self.send_content(400, {"error": "Pedido de tarefa inválido."})
+        except sqlite3.Error:
+            return self.send_content(503, {"error": "Não consegui consultar as tarefas guardadas."})
+        for task in tasks:
+            task["links"] = pdf_links(task["data"].pop("sources", []))
+        return self.send_content(200, {"tasks": tasks})
+
     def memory_request(self):
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -198,6 +236,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_content(200, {"alerts": due_alerts(local_memory())})
             except (OSError, ValueError, sqlite3.Error):
                 return self.send_content(503, {"error": "Agenda local indisponível."})
+        if self.path == "/download-watches":
+            try:
+                return self.send_content(200, download_updates(local_memory()))
+            except (OSError, ValueError, sqlite3.Error):
+                return self.send_content(503, {"error": "Avisos de downloads indisponíveis."})
+        if self.path == "/workflows":
+            return self.workflow_request()
         if self.path == "/memory":
             return self.memory_request()
         if self.path != "/chat":
@@ -246,6 +291,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_content(200, {"reply": "\n\n".join(reply)})
         try:
             memory = local_memory()
+            workflow = workflow_command(text, memory, ROOT)
+            if workflow:
+                return self.send_content(200, workflow)
             memory_reply = memory.command(text)
             if memory_reply is None:
                 memory_reply = agenda_command(text, memory)
@@ -253,6 +301,10 @@ class Handler(BaseHTTPRequestHandler):
                 memory_reply = daily_routine(normalize(text).rstrip(".!?"), memory, ROOT)
             if memory_reply is None:
                 memory_reply = file_rule_command(text, memory, ROOT)
+            if memory_reply is None:
+                memory_reply = progress_command(text, ROOT)
+            if memory_reply is None:
+                memory_reply = watch_command(text, memory)
             if memory_reply is None:
                 memory_reply = downloads_command(text, memory)
         except ValueError as error:
@@ -342,7 +394,23 @@ class Handler(BaseHTTPRequestHandler):
 
         sources = []
         try:
-            file_reply = archive_command(text, ROOT)
+            compare = re.fullmatch(r'compara "([^"]+)" com "([^"]+)"[.!]?', text, re.I)
+            if compare:
+                difference = compare_documents(ROOT, *compare.groups())
+                return self.send_content(200, {
+                    "reply": comparison_text(difference), "links": pdf_links(comparison_sources(difference)),
+                })
+            file_reply = register_command(text, memory, ROOT, sources)
+            if file_reply is None:
+                file_reply = proposal_command(text, memory, ROOT)
+            if file_reply is None:
+                file_reply = office_command(text, ROOT)
+            if file_reply is None:
+                file_reply = table_command(text, ROOT, sources)
+            if file_reply is None:
+                file_reply = code_command(text, ROOT)
+            if file_reply is None:
+                file_reply = archive_command(text, ROOT)
             if file_reply is None:
                 file_reply = organize_files(text, ROOT)
             if file_reply is None:
@@ -351,11 +419,11 @@ class Handler(BaseHTTPRequestHandler):
                 file_reply = file_command(text, ROOT)
         except (OSError, ValueError, RuntimeError, BadZipFile, sqlite3.Error) as error:
             return self.send_content(400, {"error": f"Ficheiro indisponível: {error}"})
+        except Exception:
+            logging.exception("Falha ao processar ficheiro local.")
+            return self.send_content(400, {"error": "Não consegui ler ou alterar o ficheiro. Confirma o formato e se está aberto noutra aplicação."})
         if file_reply is not None:
-            links = [{"label": name + (f" · página {number}" if number else ""),
-                      "url": "/pdf?path=" + quote(name) + (f"#page={number}" if number else "")}
-                     for name, number in sources]
-            return self.send_content(200, {"reply": file_reply, "links": links})
+            return self.send_content(200, {"reply": file_reply, "links": pdf_links(sources)})
 
         if sys.platform == "win32":
             try:
@@ -462,8 +530,22 @@ def main():
                     check_file_rules(memory, ROOT)
                 except (OSError, sqlite3.Error):
                     logging.exception("Falha ao consultar rotinas locais.")
+                try:
+                    check_download_watches(memory)
+                except (OSError, ValueError, RuntimeError, sqlite3.Error):
+                    logging.exception("Falha ao consultar downloads acompanhados.")
                 stop_routines.wait(1)
 
+        def process_workflows():
+            while not stop_routines.is_set():
+                try:
+                    process_workflow(memory, ROOT)
+                except (OSError, sqlite3.Error):
+                    logging.exception("Falha ao consultar tarefas locais.")
+                stop_routines.wait(1)
+
+        workflow_worker = Thread(target=process_workflows, daemon=True)
+        workflow_worker.start()
         worker = Thread(target=process_routines, daemon=True)
         worker.start()
         server.holo_lock = Lock()

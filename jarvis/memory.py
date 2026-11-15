@@ -54,6 +54,35 @@ class Memory:
             connection.execute("""CREATE TABLE IF NOT EXISTS settings (
                 name TEXT PRIMARY KEY, value TEXT NOT NULL
             )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS workflows (
+                id INTEGER PRIMARY KEY, step INTEGER NOT NULL, status TEXT NOT NULL,
+                data TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0, claim TEXT, lease REAL
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS code_proposals (
+                id INTEGER PRIMARY KEY, root TEXT NOT NULL, path TEXT NOT NULL,
+                old_text TEXT NOT NULL, new_text TEXT NOT NULL, before_hash TEXT NOT NULL,
+                after_hash TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'a rever'
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS download_watches (
+                id INTEGER PRIMARY KEY, root TEXT NOT NULL, name TEXT NOT NULL COLLATE NOCASE,
+                baseline TEXT, observed TEXT, observed_at REAL, finished REAL,
+                status TEXT NOT NULL DEFAULT 'pendente', announced INTEGER NOT NULL DEFAULT 0
+            )""")
+            connection.execute("""CREATE UNIQUE INDEX IF NOT EXISTS pending_download_watch
+                ON download_watches(root, name) WHERE status='pendente'""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS home_inventory (
+                name_key TEXT NOT NULL, place_key TEXT NOT NULL, name TEXT NOT NULL,
+                place TEXT NOT NULL, units INTEGER NOT NULL, PRIMARY KEY(name_key, place_key)
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY, trader TEXT NOT NULL, category TEXT NOT NULL,
+                category_key TEXT NOT NULL, cents INTEGER NOT NULL, day TEXT NOT NULL,
+                void INTEGER NOT NULL DEFAULT 0
+            )""")
+            connection.execute("""CREATE TABLE IF NOT EXISTS receipts (
+                id INTEGER PRIMARY KEY, root TEXT NOT NULL, path TEXT NOT NULL, trader TEXT NOT NULL,
+                trader_key TEXT NOT NULL, day TEXT NOT NULL, UNIQUE(root, path)
+            )""")
             return [dict(row) for row in connection.execute(query, parameters)]
 
     def list(self):

@@ -1,133 +1,94 @@
-# JARVIS Portátil — Checklist de desenvolvimento
+# JARVIS Portátil — Checklist de implementação
 
-Ao concluir uma alteração, atualiza neste ficheiro os itens validados e regista os testes que ainda faltam. Marca uma tarefa quando todos os resultados nela descritos estiverem confirmados.
+Marca com **[x]** as funcionalidades implementadas. Deixa por marcar as que continuam parciais ou pendentes e indica o que já existe. Os ensaios, os resultados anteriores e os cenários de aceitação estão no [checklist de testes](docs/CHECKLIST_TESTES.md).
 
 ## Fase 1 — Base técnica
 
 ### Funcionamento local e desempenho
 
-- [x] Instalar o Ollama e confirmar que responde a um pedido de teste no portátil.
-- [x] Configurar o Hermes Agent para usar o Ollama como fornecedor local e confirmar que um pedido feito na aplicação JARVIS chega ao modelo através do agente.
-- [x] Configurar o modelo inicial `qwen3:8b` e confirmar uma chamada real à ferramenta de listagem.
-- [x] Escolher e configurar um modelo com suporte a chamadas de ferramentas. Incluir o **Hermes 3** como opção e comparar os candidatos no mesmo portátil quanto à compreensão de português de Portugal, à escolha da ferramenta e ao tempo de resposta.
-- [x] Confirmar que o modelo devolve o nome da ferramenta e argumentos válidos, e que o Hermes Agent usa o resultado da execução para responder.
-- [x] Testar pedidos em português de Portugal com datas, horas e expressões como «daqui a 45 minutos» e «a reunião de amanhã».
-- [x] Medir o tempo até ao início da resposta, o consumo de memória e a taxa de sucesso das chamadas de ferramentas num conjunto fixo de pedidos.
-
-#### Comparação no portátil
-
-Executar `python -m scripts.compare_models qwen3:8b hermes3:3b` com ambos os modelos instalados. Os quatro pedidos usam o Ollama diretamente. As ferramentas de listagem e agenda são apenas esquemas para testar a seleção e os argumentos. A execução real da listagem pelo Hermes Agent foi verificada separadamente.
-
-| Modelo | Hora e data | Chamadas com argumentos corretos | Primeiro texto ou chamada | Memória do modelo no Ollama |
-| --- | --- | --- | --- | --- |
-| `qwen3:8b` | 2/2 | 1/2 | 1,12–9,78 s | 5,95 GB |
-| `hermes3:3b` | 1/2 | 0/2 | 0,40–3,10 s nos três pedidos com saída | 2,57 GB |
-
-Mantém-se o `qwen3:8b` no Hermes Agent. No teste direto, acertou na hora e na data de amanhã, mas usou `autorizada` como caminho em vez de `.` na listagem. O Hermes 3 anunciou suporte a ferramentas, mas não devolveu chamadas estruturadas válidas neste teste. A amostra consiste numa passagem por modelo. Os tempos incluem o estado de carregamento de cada pedido nessa passagem.
-
+- [x] Instalar o Ollama no portátil.
+- [x] Configurar o Hermes Agent para usar o Ollama como fornecedor local.
+- [x] Configurar o modelo inicial `qwen3:8b`.
+- [x] Escolher e configurar um modelo com suporte a chamadas de ferramentas. Modelo escolhido: `qwen3:8b`.
 
 ### Extensões e manutenção
 
 - [x] Criar um registo de ferramentas com nome, finalidade, argumentos e permissões visíveis para cada ferramenta. A listagem publica o esquema e a indicação de leitura através de MCP.
-- [x] Ligar a ferramenta de listagem ao Hermes por MCP e confirmar, através da API local, que o agente a chama e usa o resultado.
-- [x] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta de listagem indisponível ou não executada. Validado com uma chamada real ao Hermes, um modelo inexistente e falhas de ligação e ausência do evento simuladas.
-- [x] Criar testes automatizados do registo, da listagem autorizada, de argumentos inválidos e do acesso a pastas externas ou inexistentes.
-- [x] Automatizar a regressão de ponta a ponta com pedidos em PT-PT ao Hermes, incluindo a escolha da ferramenta e a resposta a falhas de execução.
+- [x] Ligar a ferramenta de listagem ao Hermes por MCP.
+- [x] Adicionar um diagnóstico que identifique falhas de ligação ao Ollama e ao Hermes Agent, um modelo em falta e uma ferramenta de listagem indisponível ou não executada.
 
 ### Permissões e privacidade
 
-- [x] Aplicar permissões por ferramenta e utilizador antes de executar uma chamada. Testar que uma chamada recusada não produz efeitos.
-- [x] Restringir ferramentas de ficheiros às pastas autorizadas. Testar um caminho fora dessas pastas.
-- [x] Guardar credenciais fora das conversas e verificar que ficam ausentes do histórico apresentado ao utilizador.
+- [x] Aplicar permissões por ferramenta e utilizador antes de executar uma chamada.
+- [x] Restringir ferramentas de ficheiros às pastas autorizadas.
+- [x] Guardar credenciais fora das conversas.
 - [x] Registar o que o JARVIS executou, porquê e com que resultado, incluindo pedidos recusados e falhas.
-- [x] Tratar instruções encontradas em sites, emails e PDFs como conteúdo externo. Testar que um documento que manda enviar dados não desencadeia um envio.
-
-### Teste de aceitação da base técnica
-
-> «Que ficheiros tenho na pasta de teste?»
-
-- [x] Confirmar que o Hermes Agent usa o modelo configurado no Ollama e escolhe a ferramenta de listagem com a pasta certa.
-- [x] Confirmar que o JARVIS apresenta os ficheiros reais numa resposta em português de Portugal.
-- [x] Retirar a permissão à pasta e repetir o pedido. Confirmar que a leitura é recusada e que a recusa fica registada.
-- [x] Pedir a listagem de uma pasta fora da raiz autorizada e confirmar a recusa na resposta e nos registos do Hermes.
-- [x] Desligar o Ollama e repetir o pedido. Confirmar que o diagnóstico identifica a falha e que o JARVIS comunica o erro.
-
-Validação em 14 de novembro de 2026. O teste de ponta a ponta usou o Hermes com Qwen3, as notas de exemplo e uma política por conta local do gateway. A auditoria confirmou a listagem, as falhas e a recusa após retirar a autorização. A app respondeu a um excerto de PDF que continha uma instrução de envio sem chamar ferramentas. Nesta fase, o conteúdo externo foi fornecido como excerto de texto. O teste de indisponibilidade parou uma instância isolada do Ollama e verificou o erro no diagnóstico e na app.
-
+- [x] Tratar instruções encontradas em sites, emails e PDFs como conteúdo externo.
 
 ## Fase 2 — MVP
 
-**Entrega para validação manual:** as alterações desta sessão estão implementadas; os ensaios seguintes ficam a cargo do utilizador, conforme solicitado. Seguir [o guião completo de testes da Fase 2](docs/TESTES_FASE_2.md). As caixas por marcar não são aprovação implícita: incluem verificações físicas, aceitação e limitações ainda por resolver. Não foram executados novos testes após esta decisão.
-
-O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhecimento local nativo. A agenda disponível é a agenda local do perfil; a ligação a calendários externos não está implementada. O teste real dos 45 minutos foi interrompido a pedido e continua por validar.
+O ditado inclui uma alternativa local Whisper para navegadores sem reconhecimento local nativo.
 
 ### Voz
 
-- [x] Implementar Alt+Shift+D para iniciar e parar o ditado com o JARVIS em foco. Validado com reconhecimento simulado.
-- [ ] Confirmar que o microfone físico fica ativo ao usar Alt+Shift+D.
-- [x] Implementar o botão **Ditar** para iniciar e parar a transcrição local em PT-PT e rever o texto antes de enviar. Validado no Chromium com reconhecimento simulado.
-- [x] Disponibilizar **Ouvir resposta**, dar preferência a uma voz local PT-PT e expor **Parar leitura** durante a reprodução. Validado com síntese simulada.
-- [ ] Confirmar a leitura em voz alta com uma voz portuguesa instalada e a saída de áudio do portátil.
-- [ ] Abrir a escuta por botão e confirmar que o utilizador consegue terminá-la pelo mesmo painel.
-- [ ] Transcrever pedidos com o microfone do portátil em português de Portugal.
+- [x] Implementar Alt+Shift+D para iniciar e parar o ditado com o JARVIS em foco.
+- [x] Implementar o botão **Ditar** para iniciar e parar a transcrição local em PT-PT e rever o texto antes de enviar.
+- [x] Disponibilizar **Ouvir resposta**, dar preferência a uma voz local PT-PT e expor **Parar leitura** durante a reprodução.
 - [ ] Executar comandos por voz a partir da transcrição. Depende da transcrição e das ferramentas registadas.
-- [x] Enfileirar frases para leitura automática à medida que o Hermes envia a resposta. Validado com síntese simulada.
-- [x] Cancelar a fila de leitura e bloquear a leitura das frases seguintes da resposta em curso. Validado com síntese simulada.
-- [ ] Interromper a voz a meio de uma frase e confirmar que o áudio para imediatamente, incluindo o que já estava em fila.
-- [x] Reconhecer «cancela» durante um pedido e fechar a ligação ao Hermes. Validado com reconhecimento simulado e um servidor de teste.
-- [ ] Confirmar com voz real que «cancela» interrompe um pedido em curso no Hermes.
-- [x] Corrigir o último lembrete pendente com «afinal, daqui a 30 minutos» sem reiniciar a conversa. No Chromium disparou só o aviso corrigido.
-- [x] Alterar a voz local de leitura e confirmar a mudança na resposta seguinte com síntese simulada.
-- [x] Alterar a velocidade da leitura e confirmar a mudança na resposta seguinte com síntese simulada.
-- [x] Permitir selecionar um microfone e passar a faixa selecionada ao reconhecimento local. Validado no Chromium com um dispositivo simulado.
-- [ ] Confirmar a captura com o microfone físico selecionado.
+- [x] Enfileirar frases para leitura automática à medida que o Hermes envia a resposta.
+- [x] Cancelar a fila de leitura e bloquear a leitura das frases seguintes da resposta em curso.
+- [x] Reconhecer «cancela» durante um pedido e fechar a ligação ao Hermes.
+- [x] Corrigir o último lembrete pendente com «afinal, daqui a 30 minutos» sem reiniciar a conversa.
+- [x] Permitir alterar a voz local de leitura.
+- [x] Permitir alterar a velocidade da leitura.
+- [x] Permitir selecionar um microfone e passar a faixa selecionada ao reconhecimento local.
 - [x] Abrir as definições de som do Windows a partir do JARVIS para escolher a saída de áudio.
-- [ ] Confirmar que a voz é reproduzida na saída selecionada no Windows.
 - [x] Desativar **Ler respostas automaticamente** e receber a resposta por texto.
 
 ### Conversa
 
-- [x] Manter o contexto entre perguntas sucessivas na mesma sessão. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Resolver referências como «esse ficheiro» e «a reunião de amanhã» quando o contexto identifica uma única opção. Depende da pesquisa de ficheiros ou da consulta da agenda. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Pedir esclarecimento quando duas opções correspondem ao pedido e aguardar a seleção antes de agir. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Alternar o idioma da resposta durante uma conversa quando o utilizador pedir. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Ajustar o nível de detalhe quando o utilizador pedir uma resposta mais curta ou mais completa. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Manter o contexto entre perguntas sucessivas na mesma sessão.
+- [x] Resolver referências como «esse ficheiro» e «a reunião de amanhã» quando o contexto identifica uma única opção. Depende da pesquisa de ficheiros ou da consulta da agenda.
+- [x] Pedir esclarecimento quando duas opções correspondem ao pedido e aguardar a seleção antes de agir.
+- [x] Alternar o idioma da resposta durante uma conversa quando o utilizador pedir.
+- [x] Ajustar o nível de detalhe quando o utilizador pedir uma resposta mais curta ou mais completa.
 
 ### Windows e aplicações
 
-- [x] Abrir aplicações Windows suportadas pelo nome. Validado com lançamento simulado.
-- [x] Enviar um ficheiro de texto pelo caminho selecionado ao VS Code. Validado com lançamento simulado.
-- [x] Encaminhar um endereço HTTP ou HTTPS para o navegador predefinido. Validado com abertura simulada.
-- [x] Alterar o volume do Windows e verificar o nível resultante. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Mudar o dispositivo de áudio predefinido do Windows e verificar a seleção no sistema. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
+- [x] Abrir aplicações Windows suportadas pelo nome.
+- [x] Enviar um ficheiro de texto pelo caminho selecionado ao VS Code.
+- [x] Encaminhar um endereço HTTP ou HTTPS para o navegador predefinido.
+- [x] Alterar o volume do Windows e apresentar o nível resultante.
+- [x] Mudar o dispositivo de áudio predefinido do Windows.
 
 ### Programação
 
 - [x] Abrir o projeto certo a partir de um nome reconhecido. Pedir a pasta ou a seleção quando houver vários projetos com o mesmo nome.
-- [x] Abrir o JARVIS Portátil no VS Code com «Jarvis, abre o meu projeto no VS Code». Confirmar a pasta no editor e testar a mensagem de erro quando o VS Code está indisponível.
-- [x] Resolver outros projetos autorizados por nome ou seleção e encaminhar a pasta para o VS Code. Validado com pastas de teste.
+- [x] Abrir o JARVIS Portátil no VS Code com «Jarvis, abre o meu projeto no VS Code» e informar quando o editor está indisponível.
+- [x] Resolver outros projetos autorizados por nome ou seleção e encaminhar a pasta para o VS Code.
 
 ### Pesquisa pessoal
 
 - [x] Encontrar ficheiros pelo nome no projeto JARVIS e apresentar pedidos para os abrir.
 - [x] Encontrar ficheiros de texto pelo conteúdo no projeto JARVIS.
-- [x] Estender a pesquisa por nome e conteúdo aos restantes projetos autorizados. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Encontrar as notas da última sessão de um projeto autorizado em `notes/AAAA-MM-DD/`, mostrando os ficheiros e a origem da data. Validado no chat com pastas de teste.
+- [x] Estender a pesquisa por nome e conteúdo aos restantes projetos autorizados.
+- [x] Encontrar as notas da última sessão de um projeto autorizado em `notes/AAAA-MM-DD/`, mostrando os ficheiros e a origem da data.
 
 ### Ficheiros e documentos
 
 - [x] Criar um ficheiro no projeto JARVIS sem sobrescrever e devolver a sua localização.
-- [x] Guardar uma nota enviada pelo chat e confirmar que o ficheiro contém o texto pedido.
+- [x] Guardar o texto de uma nota enviada pelo chat.
 
 ### Agenda e tarefas
 
-- [ ] Consultar a agenda ligada e devolver os compromissos do dia solicitado. A consulta da agenda local está implementada; uma agenda externa ainda não está ligada.
-- [x] Consultar a disponibilidade num intervalo e apresentar os períodos livres. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [x] Criar um temporizador e confirmar o disparo com um intervalo de teste no Chromium.
-- [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta. Validado no Chromium com um intervalo de teste.
+- [x] Consultar os compromissos do dia na agenda local do perfil.
+- [ ] Consultar compromissos do dia em calendários externos ligados.
+- [x] Consultar a disponibilidade num intervalo e apresentar os períodos livres.
+- [x] Criar temporizadores com aviso ao terminar.
+- [x] Criar um lembrete relativo no chat, mostrar a hora calculada e emitir um aviso com a página aberta.
 - [x] Calcular a próxima ocorrência de uma hora absoluta para agendar um aviso.
-- [x] Editar o último lembrete pendente e confirmar em teste que só o aviso corrigido dispara.
-- [x] Cancelar o último lembrete pendente e confirmar em teste que o aviso não dispara.
+- [x] Editar o último lembrete pendente e substituir o aviso anterior.
+- [x] Cancelar o último lembrete pendente.
 
 ### Painel e acessibilidade
 
@@ -135,28 +96,15 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 - [x] Abrir o Jarvis normal no navegador com o atalho do Windows.
 - [x] Apresentar o início e a conclusão de uma chamada real de ferramenta no painel de atividade do Hermes.
 - [x] Abrir o painel H.O.L.O Hands a partir do Jarvis normal quando o submódulo está instalado.
-- [x] Mostrar os estados do microfone no painel. Validado com reconhecimento simulado.
-- [x] Mostrar a transcrição parcial durante a escuta com reconhecimento nativo compatível. Validado com reconhecimento simulado. Na alternativa Whisper, a transcrição aparece apenas depois de parar.
-- [x] Mostrar legendas ao início de cada trecho lido e ocultá-las no fim. Validado com síntese simulada.
-- [x] Mostrar **Cancelar pedido** durante a execução e confirmar que fecha o fluxo de resposta em teste.
-- [x] Permitir usar o chat, a escuta e o botão **Parar** por teclado. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-- [ ] Verificar a ordem do foco, os rótulos dos controlos, o contraste e a leitura dos estados com tecnologias de apoio.
+- [x] Mostrar os estados do microfone no painel.
+- [x] Mostrar a transcrição parcial durante a escuta com reconhecimento nativo compatível. Na alternativa Whisper, a transcrição aparece depois de parar.
+- [x] Mostrar legendas ao início de cada trecho lido e ocultá-las no fim.
+- [x] Mostrar **Cancelar pedido** durante a execução e fechar o fluxo de resposta ao cancelar.
+- [x] Permitir usar o chat, a escuta e o botão **Parar** por teclado.
 
 ### Funcionamento local e desempenho
 
-- [ ] Desligar a Internet após instalar os componentes locais e verificar a conversa, a transcrição, a leitura em voz alta e os comandos básicos do Windows.
-- [x] Confirmar que a indisponibilidade de uma integração externa é apresentada no comando que depende dela e que os comandos locais continuam a funcionar. Verificado durante o desenvolvimento anterior ao pedido de suspender os testes; repetir no guião manual.
-
-### Teste de aceitação do MVP
-
-> «Jarvis, abre o meu projeto, encontra as notas da última sessão e lembra-me daqui a 45 minutos de fazer uma pausa.»
-
-- [x] Validar por texto o pedido combinado, incluindo os caminhos das notas e o cálculo dos 45 minutos. A abertura do VS Code foi simulada neste teste.
-- [ ] Dizer o pedido em voz alta e confirmar que a transcrição mantém as três ações e o intervalo de 45 minutos.
-- [ ] Confirmar que abre o projeto correto.
-- [ ] Confirmar que encontra as notas certas e indica os ficheiros ou as ligações onde as encontrou.
-- [ ] Confirmar que cria um único lembrete para a hora do pedido mais 45 minutos e comunica essa hora.
-- [ ] Deixar passar os 45 minutos e confirmar que o aviso de pausa dispara uma única vez.
+- [x] Mostrar erros de integrações externas no comando afetado e manter os comandos locais disponíveis.
 
 ## Fase 3 — Memória e rotinas
 
@@ -166,63 +114,63 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 
 ### Memória
 
-- [x] Guardar uma preferência e demonstrar que é aplicada numa conversa posterior.
+- [x] Guardar preferências e aplicá-las em conversas posteriores.
 - [x] Guardar um contacto e recuperá-lo pelo nome.
 - [x] Guardar um projeto e recuperar a pasta associada.
 - [x] Guardar um nome de dispositivo e resolvê-lo num pedido posterior.
 - [x] Guardar uma rotina com o nome escolhido e recuperá-la por esse nome.
 - [x] Interpretar «lembra-te disto», guardar a informação indicada e mostrá-la no editor.
-- [x] Interpretar «esquece isto» e confirmar que a memória selecionada deixa de ser recuperada.
+- [x] Interpretar «esquece isto» e remover a memória selecionada.
 - [x] Pesquisar conversas anteriores e abrir a conversa onde aparece o resultado.
 - [x] Identificar nas respostas se uma afirmação veio de uma memória guardada ou de uma dedução.
 - [x] Mostrar a data e a origem de cada memória.
-- [x] Editar uma memória e confirmar que a próxima consulta usa o valor atualizado.
-- [x] Apagar uma memória pelo editor e confirmar que deixa de aparecer na pesquisa e nas respostas.
+- [x] Editar uma memória e usar o valor atualizado nas consultas.
+- [x] Apagar uma memória pelo editor e removê-la da pesquisa e das respostas.
 - [x] Exportar as memórias num ficheiro legível, com a data e a origem dos registos.
-- [x] Isolar as memórias e o histórico por perfil. Confirmar que cada instância e o histórico no navegador consultam os registos do perfil configurado. Os perfis são da mesma conta Windows.
+- [x] Isolar as memórias e o histórico por perfil. Os perfis pertencem à mesma conta Windows.
 
 ### Pesquisa pessoal
 
 - [x] Pesquisar texto em PDFs nas pastas autorizadas.
 - [x] Pesquisar transcrições guardadas nas pastas autorizadas.
-- [x] Indexar o texto de documentos digitalizados por OCR a pedido e encontrar uma passagem que só exista na imagem. Testado com PDF digitalizado e atualização do índice.
+- [x] Indexar por OCR o texto de documentos digitalizados a pedido e pesquisar o texto extraído.
 - [x] Resumir um documento encontrado e apresentar a ligação para o original.
 - [x] Responder a perguntas com ligações para as fontes e páginas quando aplicável.
-- [x] Atualizar o índice quando um ficheiro é criado, alterado, movido ou apagado. Testar os quatro casos.
+- [x] Atualizar o índice quando um ficheiro é criado, alterado, movido ou apagado.
 
 ### Windows e aplicações
 
 - [x] Gerir janelas, incluindo mover, minimizar, maximizar e restaurar uma janela identificada.
-- [x] Mover uma janela para o monitor indicado e confirmar a sua posição.
-- [x] Ativar o modo de foco do Windows e verificar o estado.
+- [x] Mover uma janela para o monitor indicado.
+- [x] Ativar e consultar o modo de foco do Windows.
 - [x] Consultar a bateria e apresentar a percentagem e o estado de carregamento.
 - [x] Consultar o armazenamento e apresentar o espaço disponível na unidade pedida.
 - [x] Fazer uma captura de ecrã e devolver o ficheiro criado.
 - [x] Ler a seleção ativa a pedido e apresentar o texto selecionado.
-- [x] Ler a área de transferência a pedido e confirmar que a ferramenta só a consulta quando autorizada.
-- [x] Criar espaços de trabalho como «modo estudo» e «modo programação» e verificar as aplicações, pastas e janelas abertas para cada um.
+- [x] Ler a área de transferência a pedido e exigir autorização antes da consulta.
+- [x] Criar espaços de trabalho como «modo estudo» e «modo programação» com as aplicações, pastas e janelas correspondentes.
 
 ### Ficheiros e documentos
 
-- [x] Renomear um ficheiro e confirmar o novo nome. Validado numa pasta de teste.
-- [x] Mover um ficheiro e confirmar que está no destino. O teste confirmou também a recusa de sobrescrita.
+- [x] Renomear um ficheiro.
+- [x] Mover um ficheiro e impedir sobrescrita.
 - [x] Pré-visualizar uma reorganização de Downloads e aplicar apenas os movimentos aprovados.
-- [x] Identificar duplicados por SHA-256 e apresentar os caminhos. Validado com ficheiros de teste.
-- [x] Comprimir os ficheiros selecionados e confirmar o conteúdo do arquivo.
-- [x] Extrair um arquivo para a pasta escolhida e confirmar os ficheiros extraídos.
-- [x] Converter um ficheiro para o formato pedido e verificar que abre no formato de destino.
-- [x] Preparar uma cópia de segurança de ficheiros selecionados e restaurar um ficheiro de teste para confirmar que é utilizável.
+- [x] Identificar duplicados por SHA-256 e apresentar os caminhos.
+- [x] Comprimir os ficheiros selecionados.
+- [x] Extrair um arquivo para a pasta escolhida.
+- [x] Converter um ficheiro para o formato pedido.
+- [x] Preparar cópias de segurança de ficheiros selecionados e permitir restaurá-los.
 
 ### Agenda e tarefas
 
-- [x] Criar um evento e verificar o título, a data, a hora e o calendário de destino.
-- [x] Reagendar um evento e verificar o novo horário no calendário.
+- [x] Criar eventos com título, data e hora no calendário indicado.
+- [x] Reagendar um evento.
 - [x] Detetar conflitos antes de criar ou reagendar um evento e mostrar os compromissos que se sobrepõem.
 - [x] Preparar a agenda do dia por ordem cronológica.
-- [x] Criar uma tarefa recorrente e verificar a próxima ocorrência após concluir a atual.
-- [x] Criar um lembrete associado a um evento e confirmar que acompanha o evento quando este é reagendado.
-- [x] Reservar um bloco de foco e verificar que aparece na agenda.
-- [x] Configurar a antecedência de um aviso de compromisso e confirmar que dispara no momento definido.
+- [x] Criar tarefas recorrentes e calcular a próxima ocorrência após concluir a atual.
+- [x] Criar lembretes associados a eventos e atualizá-los quando o evento é reagendado.
+- [x] Reservar blocos de foco na agenda.
+- [x] Configurar a antecedência de um aviso de compromisso.
 
 ### Vida prática
 
@@ -230,9 +178,9 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 
 ### Rotinas e fluxos
 
-- [x] Criar uma regra do tipo «quando acontecer X, faz Y» e testar que reage ao evento escolhido.
-- [x] Agendar o modo programação e confirmar que arranca à hora configurada com relógio de teste.
-- [x] Adicionar uma condição a uma rotina e testar os casos em que é verdadeira e falsa.
+- [x] Criar regras do tipo «quando acontecer X, faz Y».
+- [x] Agendar o modo programação.
+- [x] Adicionar condições às rotinas.
 - [x] Pré-visualizar as etapas, os destinos e os efeitos previstos de uma rotina.
 - [x] Executar uma rotina manualmente a partir do painel, independentemente do horário.
 - [x] Mostrar o histórico da rotina com a hora, os passos executados e o resultado.
@@ -249,89 +197,71 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 
 ### Funcionamento local e desempenho
 
-- [x] Confirmar que a memória local pode ser consultada, editada e recuperada depois de reiniciar sem acesso externo. Validado em teste com ligações limitadas ao próprio computador.
+- [x] Consultar, editar e recuperar a memória local após reiniciar sem acesso externo.
 
 ### Extensões e manutenção
 
 - [x] Criar cópias de segurança das definições, memórias e rotinas.
-- [x] Restaurar uma cópia de segurança de teste e verificar que recupera as definições, memórias e rotinas esperadas.
-
-### Validação
-
-- [x] Encontrar uma passagem que só existe na imagem de um PDF, com OCR a pedido e referência à página.
-- [x] Criar um ZIP de um ficheiro e extrair uma cópia com conteúdo idêntico. Validar a recusa de um caminho externo dentro do ZIP.
-- [x] Copiar um ficheiro de teste e confirmar o conteúdo da cópia.
-- [x] Confirmar com uma janela de teste do Windows as operações de minimizar, maximizar, restaurar e mudar de monitor.
-- [x] Confirmar com relógio de teste que o aviso acompanha um evento reagendado e só é entregue uma vez.
-
-- [x] Enviar o pedido combinado pela API local e confirmar o registo da memória, a localização da nota de teste e o agendamento para as 09:00.
-- [x] Reabrir a base local, avançar o relógio de teste e confirmar que a rotina é executada uma vez, com o VS Code simulado.
-- [x] Criar e restaurar uma cópia SQLite de memórias e rotinas num perfil novo. O teste de aceitação inclui também as definições de voz do perfil.
-- [x] Validar no Chromium a seleção de uma memória com dados de teste e a pesquisa e reabertura de uma conversa guardada no navegador.
-
-### Teste de aceitação de memória e rotinas
-
-> «Lembra-te de que o meu projeto principal é o JARVIS. Encontra a nota onde escrevi sobre temporizadores e, amanhã às nove, ativa o modo programação.»
-
-- [x] Confirmar que a memória apresenta a informação, a data e a origem.
-- [x] Confirmar que a pesquisa encontra a passagem e permite abrir a nota.
-- [x] Editar a memória do projeto, reabrir os dados da sessão agendada e confirmar que o valor editado continua disponível no teste automatizado.
-- [x] Confirmar que a rotina continua agendada após reabrir os dados, dispara às nove no relógio de teste e pede ao VS Code para abrir o projeto e as notas.
-- [x] Validar com relógio real um agendamento curto depois de terminar e voltar a arrancar o servidor. O VS Code abriu a pasta e a nota de teste. O horário das 09:00 foi validado separadamente com relógio de teste.
+- [x] Restaurar uma cópia de segurança das definições, memórias e rotinas.
 
 ## Fase 4 — Tarefas em vários passos
 
+Consulta os [comandos e dependências da Fase 4](README.md#comandos-da-fase-4).
+
 ### Conversa
 
-- [ ] Mostrar os passos planeados, em execução e concluídos de uma tarefa longa.
-- [ ] Permitir que o utilizador intervenha numa tarefa longa para corrigir um ficheiro, destino ou outro parâmetro antes do passo que o utiliza.
+- [x] Mostrar os passos planeados, em execução e concluídos de uma tarefa longa. **Implementado no painel do fluxo PDF → rascunho.**
+- [x] Permitir que o utilizador intervenha numa tarefa longa para corrigir um ficheiro, destino ou outro parâmetro antes do passo que o utiliza. **Implementado para a escolha dos PDFs antes da comparação e a correção após falha.**
 
 ### Automatização de aplicações
 
-- [ ] Navegar numa aplicação integrada e verificar que chega ao ecrã ou recurso pedido.
-- [ ] Preencher um formulário e mostrar os valores para revisão.
-- [ ] Transferir dados entre dois serviços autorizados e conferir os campos no destino.
-- [ ] Gerar um ficheiro como resultado de uma sequência e confirmar que abre com os dados esperados.
-- [ ] Executar uma sequência de passos pela API ou por um atalho estável, quando disponível, e verificar o resultado de cada ação importante.
-- [ ] Usar a interface visual numa aplicação sem integração e confirmar o estado final depois de cada ação importante.
-- [ ] Interromper a sequência se um resultado esperado não for confirmado e mostrar o passo que falhou.
+- [ ] Navegar até ao ecrã ou recurso pedido numa aplicação integrada.
+- [ ] Preencher um formulário e mostrar os valores para revisão. **Parcial. O painel preenche e mostra o rascunho local para revisão.**
+- [ ] Transferir dados entre dois serviços autorizados com mapeamento dos campos.
+- [ ] Gerar um ficheiro como resultado de uma sequência. **Parcial. O fluxo exporta o rascunho em TXT.**
+- [ ] Executar sequências pela API ou por um atalho estável e verificar o resultado das ações importantes durante a execução. **Parcial. O fluxo PDF → rascunho usa a API local.**
+- [ ] Automatizar ações pela interface visual quando a aplicação não tem integração e detetar o estado final das ações importantes.
+- [x] Interromper a sequência se um resultado esperado não for confirmado e mostrar o passo que falhou. **Implementado no fluxo PDF → rascunho.**
 
 ### Ficheiros e documentos
 
-- [ ] Criar um documento e reabri-lo para verificar o conteúdo.
-- [ ] Editar um documento existente e verificar as alterações pedidas.
-- [ ] Criar uma folha de cálculo e verificar os valores e as fórmulas solicitadas.
-- [ ] Editar uma folha de cálculo existente e verificar as células e os resultados afetados.
-- [ ] Criar uma apresentação e verificar o conteúdo dos diapositivos.
-- [ ] Editar uma apresentação existente e verificar os diapositivos alterados.
-- [ ] Comparar duas versões de um documento e indicar as diferenças e a respetiva localização.
-- [ ] Extrair uma tabela de um PDF e verificar se as linhas e colunas correspondem à origem.
+- [x] Criar documentos DOCX e reler o conteúdo antes de guardar a versão final.
+- [x] Editar parágrafos em documentos DOCX existentes e reler as alterações.
+- [x] Criar folhas XLSX e reler os valores e fórmulas gravados.
+- [x] Editar células e fórmulas em folhas XLSX existentes e reler as células gravadas. O recálculo depende de uma aplicação de folha de cálculo.
+- [x] Criar apresentações PPTX com diapositivos de título e texto.
+- [x] Editar títulos e campos de texto de conteúdo em apresentações PPTX existentes. A edição de conteúdo suporta diapositivos com um único campo de texto.
+- [x] Comparar duas versões de um documento e indicar as diferenças e a respetiva localização. **Implementado para texto de PDF, DOCX, TXT e Markdown.**
+- [x] Extrair tabelas de PDFs com texto e guardar em CSV.
 
 ### Pesquisa pessoal
 
 - [ ] Pesquisar emails nas contas autorizadas e ligar os resultados às mensagens originais. Depende da autorização por conta.
-- [ ] Localizar as versões pedidas de um documento, compará-las e apresentar as diferenças com referências às duas origens. Depende da pesquisa e da comparação de documentos.
+- [x] Localizar as versões pedidas de um documento, compará-las e apresentar as diferenças com referências às duas origens. Depende da pesquisa e da comparação de documentos. **Implementado no fluxo PDF → rascunho com pesquisa por nome e seleção explícita.**
 
 ### Email e mensagens
 
-- [ ] Ligar os serviços de email e mensagens usados pelo utilizador e verificar o acesso às conversas autorizadas.
+- [ ] Ligar os serviços de email e mensagens usados pelo utilizador às contas autorizadas.
 - [ ] Pesquisar uma conversa por contacto, assunto ou conteúdo.
 - [ ] Resumir uma conversa e ligar às mensagens que sustentam o resumo.
 - [ ] Destacar as perguntas que ainda aguardam resposta.
 - [ ] Extrair tarefas mencionadas em mensagens e mostrar as respetivas origens.
 - [ ] Extrair datas mencionadas em mensagens e pedir esclarecimento quando forem ambíguas.
-- [ ] Redigir uma resposta como rascunho e mostrar o conteúdo para revisão.
-- [ ] Selecionar anexos e confirmar os nomes e versões antes do envio.
-- [ ] Mostrar destinatários, assunto, conteúdo e anexos antes de pedir confirmação de envio.
+- [x] Gerar, editar e guardar um rascunho local de email a partir da comparação de PDFs e permitir descarregá-lo em TXT.
+- [ ] Redigir uma resposta a partir de uma conversa do serviço de email e mostrar o rascunho para revisão.
+- [x] Selecionar ficheiros do projeto como anexos de um rascunho local, rever nomes e versões e exportar o email em EML. O JARVIS pede nova revisão se um ficheiro mudar.
+- [ ] Associar os anexos revistos à mensagem a enviar no serviço de email ligado.
+- [x] Mostrar e permitir editar o destinatário, o assunto e o conteúdo no rascunho local.
+- [ ] Mostrar destinatários, assunto, conteúdo e anexos da versão que será enviada antes de pedir confirmação.
 - [ ] Enviar a versão confirmada e guardar a referência do envio. Depende da pré-visualização e da confirmação.
 - [ ] Responder por voz, permitindo rever a transcrição, o rascunho e o destinatário antes de confirmar. Depende da transcrição e da pré-visualização.
 - [ ] Responder a «já enviaste o email?» consultando o estado no serviço ou na pasta de enviados.
-- [ ] Cancelar um envio antes da confirmação e verificar que a mensagem fica por enviar.
+- [ ] Permitir cancelar um envio antes da confirmação.
 
 ### Reuniões
 
 - [ ] Preparar notas para uma reunião com ligações para os documentos relevantes.
-- [ ] Transcrever uma reunião após obter consentimento e confirmar que a captura termina quando a transcrição é parada.
+- [ ] Transcrever reuniões após obter consentimento e parar a captura ao terminar a transcrição.
 - [ ] Identificar as decisões tomadas na transcrição.
 - [ ] Extrair tarefas da reunião com responsáveis e prazos quando estes forem indicados.
 - [ ] Gerar um resumo com marcas temporais que permitem localizar os excertos relevantes.
@@ -341,7 +271,7 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 ### Internet e investigação
 
 - [ ] Pesquisar na web e listar resultados que respondem ao pedido.
-- [ ] Abrir as fontes selecionadas e verificar o conteúdo na origem.
+- [ ] Abrir as fontes selecionadas e consultar o conteúdo na origem.
 - [ ] Comparar resultados de várias fontes e indicar onde concordam ou divergem.
 - [ ] Distinguir factos atribuídos a fontes de inferências do JARVIS.
 - [ ] Consultar a meteorologia para o lugar e o momento pedidos e mostrar a origem.
@@ -354,15 +284,15 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 
 ### Programação
 
-- [ ] Pesquisar código no projeto autorizado e devolver os ficheiros e linhas relevantes.
+- [x] Pesquisar código no projeto autorizado e devolver os ficheiros e linhas relevantes. **Implementado com pesquisa literal e resultados por ficheiro e linha.**
 - [ ] Explicar um erro usando a mensagem e o trecho de código relacionados.
-- [ ] Preparar uma proposta de alteração para os ficheiros autorizados e mostrar as diferenças para revisão.
-- [ ] Aplicar a proposta após aprovação e mostrar os ficheiros alterados. Se um ficheiro tiver mudado desde a revisão, pedir nova revisão antes de aplicar.
+- [x] Preparar uma proposta de alteração para os ficheiros autorizados e mostrar as diferenças para revisão. **Implementado para uma substituição textual localizada num ficheiro.**
+- [x] Aplicar a proposta após aprovação e mostrar os ficheiros alterados. Se um ficheiro tiver mudado desde a revisão, pedir nova revisão antes de aplicar. **Implementado com aprovação por número e verificação da versão do ficheiro.**
 - [ ] Correr os testes relevantes e apresentar os resultados, incluindo eventuais falhas.
-- [ ] Consultar o estado, o histórico ou o ramo do Git conforme o pedido.
-- [ ] Resumir um diff e indicar as alterações principais e os ficheiros afetados.
+- [x] Consultar o estado, o histórico ou o ramo do Git conforme o pedido. **Implementado.**
+- [ ] Resumir um diff e indicar as alterações principais e os ficheiros afetados. **Parcial. Mostra estatísticas por ficheiro das alterações preparadas e por preparar.**
 - [ ] Preparar um pull request com título, descrição e resultados dos testes para revisão.
-- [ ] Executar código num ambiente isolado quando necessário e verificar os limites de acesso ao projeto.
+- [ ] Executar código em ambiente isolado com limites de acesso ao projeto.
 
 ### Estudo e trabalho
 
@@ -373,73 +303,60 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 - [ ] Registar os tópicos em que o utilizador teve dificuldades e recuperá-los na sessão seguinte.
 - [ ] Gerar um plano de estudo que tenha em conta os tópicos, o tempo disponível e a data de avaliação.
 - [ ] Preparar um documento a partir de materiais autorizados e indicar os materiais usados.
-- [ ] Acompanhar o progresso de um projeto e mostrar tarefas concluídas, pendentes e próximos prazos.
+- [x] Acompanhar o progresso de um projeto e mostrar tarefas concluídas, pendentes e próximos prazos. **Implementado a partir do checklist Markdown de um projeto autorizado. Os prazos vêm das datas explícitas nas tarefas.**
 
 ### Vida prática
 
 - [ ] Sugerir receitas a partir dos ingredientes disponíveis e distinguir os que ainda é preciso comprar.
 - [ ] Planear refeições para os dias escolhidos e gerar a lista de ingredientes em falta.
 - [ ] Preparar um plano de viagem com as datas, locais e opções de transporte pedidas.
-- [ ] Registar itens no inventário doméstico e recuperá-los por nome ou localização.
-- [ ] Organizar recibos e permitir encontrá-los por data ou comerciante.
-- [ ] Acompanhar despesas e apresentar totais por período e categoria.
+- [x] Registar itens e quantidades no inventário doméstico por perfil e recuperá-los por nome ou localização.
+- [x] Catalogar recibos PDF do projeto por data e comerciante e abrir os originais a partir da pesquisa.
+- [x] Registar despesas em euros, anulá-las por número e apresentar totais por período e categoria.
 - [ ] Preparar um carrinho e mostrar os artigos, as quantidades e o total para aprovação.
 - [ ] Preparar uma reserva e mostrar as opções, as datas e as condições para aprovação.
 - [ ] Preparar um formulário e mostrar os dados preenchidos para aprovação antes da submissão.
 
 ### Rotinas e fluxos
 
-- [ ] Inserir uma etapa de aprovação e verificar que a rotina aguarda a decisão antes de continuar.
-- [ ] Guardar o estado das tarefas em curso, incluindo o passo atual, os já concluídos e as aprovações pendentes.
-  - [ ] Pedir «avisa-me quando o download acabar», reiniciar o JARVIS enquanto decorre e confirmar que o aviso é emitido uma única vez quando terminar.
-  - [ ] Reiniciar o JARVIS quando uma tarefa aguarda aprovação e confirmar que retoma nesse ponto.
-- [ ] Repetir apenas o passo em falta após uma falha. Simular um erro intermédio e verificar que os passos concluídos permanecem registados.
-- [ ] Evitar repetir ações com efeitos externos. Simular uma falha após o serviço aceitar um envio e confirmar que o JARVIS verifica o estado antes de tentar outra vez.
-- [ ] Cancelar uma tarefa entre dois passos e mostrar o que já aconteceu e o que ficou por executar.
+- [x] Inserir uma etapa de aprovação que bloqueia o próximo passo até à decisão. Implementado para a confirmação dos PDFs.
+- [x] Persistir o estado das tarefas em curso, incluindo passos concluídos, passo atual e aprovações pendentes, e retomar nesse ponto após reiniciar. Implementado no fluxo PDF → rascunho por perfil.
+  - [x] Implementar o acompanhamento persistente de downloads e o aviso de conclusão no painel.
+- [x] Permitir repetir apenas o passo em falta após uma falha e manter os passos concluídos registados. Implementado no fluxo PDF → rascunho.
+- [ ] Evitar repetir ações com efeitos externos ao verificar o estado no serviço antes de uma nova tentativa.
+- [x] Cancelar uma tarefa entre dois passos e mostrar o que já aconteceu e o que ficou por executar. **Implementado no painel do fluxo PDF → rascunho.**
 
 ### Painel e acessibilidade
 
-- [ ] Mostrar as ações pendentes com os detalhes necessários para aprovar ou recusar cada uma.
-- [ ] Mostrar as tarefas em execução, o passo atual e os controlos disponíveis para intervir.
+- [x] Mostrar as ações pendentes com os detalhes necessários para aprovar ou recusar cada uma. **Implementado para a seleção de PDFs pendente de confirmação.**
+- [x] Mostrar as tarefas em execução, o passo atual e os controlos disponíveis para intervir. **Implementado no painel do fluxo PDF → rascunho.**
 
 ### Permissões e privacidade
 
-- [ ] Aplicar permissões por conta e testar que uma conta não autorizada fica inacessível.
+- [ ] Restringir o acesso às integrações por conta autorizada.
 - [ ] Pedir confirmação antes de enviar mensagens. Depende de poder mostrar os destinatários, o conteúdo e os anexos.
 - [ ] Pedir confirmação antes de efetuar compras. Depende de poder mostrar o vendedor, os artigos e o total.
 - [ ] Pedir confirmação antes de eliminar ficheiros permanentemente. Depende de poder identificar os ficheiros e mostrar o efeito da eliminação.
 - [ ] Invalidar a confirmação quando o conteúdo ou destino da ação muda e pedir nova confirmação.
-- [ ] Testar, para cada ação sujeita a confirmação, os casos de aprovação, recusa e cancelamento.
 
 ### Extensões e manutenção
 
-- [ ] Integrar uma ferramenta por MCP e verificar que respeita as permissões registadas.
-- [ ] Instalar uma extensão e confirmar que as ferramentas permitidas aparecem no registo.
-- [ ] Desativar uma extensão e confirmar que deixa de ser possível chamar as suas ferramentas.
-- [ ] Verificar as ligações às integrações e identificar o serviço indisponível a partir do painel.
-- [ ] Recuperar após uma falha do JARVIS, restaurando o estado compatível da tarefa e verificando os efeitos externos já confirmados.
-
-### Teste de aceitação de tarefas em vários passos
-
-> «Encontra o PDF do orçamento, compara-o com a versão anterior e prepara um email com as alterações.»
-
-- [ ] Confirmar que localiza os dois PDFs certos e pede esclarecimento se houver mais de uma versão anterior plausível.
-- [ ] Confirmar que apresenta as diferenças e aponta para as páginas correspondentes nas duas versões.
-- [ ] Confirmar que o rascunho inclui as alterações e que apresenta o destinatário, o conteúdo e eventuais anexos para revisão.
-- [ ] Simular uma falha depois da comparação, reiniciar e confirmar que retoma no passo do rascunho, sem repetir a comparação.
-- [ ] Cancelar a primeira tentativa de envio e verificar que não há mensagem enviada.
-- [ ] Aprovar um envio de teste, simular uma falha na resposta do serviço e confirmar que o JARVIS verifica o envio antes de repetir a ação. Verificar que existe uma única mensagem enviada.
+- [ ] Integrar uma ferramenta por MCP e aplicar as permissões registadas.
+- [ ] Instalar extensões e publicar as ferramentas permitidas no registo.
+- [ ] Desativar extensões e bloquear chamadas às respetivas ferramentas.
+- [ ] Verificar as ligações às integrações e identificar serviços indisponíveis no painel.
+- [ ] Recuperar tarefas após uma falha e reconciliar os efeitos externos já confirmados. **Parcial. O fluxo PDF → rascunho retoma passos locais.**
 
 ## Fase 5 — Versão avançada
 
 ### Programação
 
-- [ ] Criar uma extensão opcional do VS Code com um comando para enviar a seleção ou o ficheiro ativo ao JARVIS. Mostrar que conteúdo será enviado.
+- [ ] Criar uma extensão opcional do VS Code para mostrar a seleção ou o ficheiro ativo antes de o enviar ao JARVIS.
 - [ ] Mostrar a proposta do JARVIS como uma comparação dentro do VS Code e permitir aprová-la ou descartá-la. Depende da geração e aplicação de propostas da Fase 4.
 
 ### Voz
 
-- [ ] Ativar a escuta com «Olá, Jarvis» e verificar que passa a transcrever o pedido. Depende da transcrição e da indicação do estado do microfone.
+- [ ] Ativar a transcrição com «Olá, Jarvis». Depende da transcrição e da indicação do estado do microfone.
 
 ### Ecrã, imagens e câmara
 
@@ -448,9 +365,9 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 - [ ] Ler uma mensagem de erro no ecrã e reproduzir o texto relevante.
 - [ ] Identificar o botão referido pelo utilizador numa captura ou janela.
 - [ ] Extrair dados de uma imagem e permitir que sejam revistos.
-- [ ] Partilhar uma janela temporariamente para acompanhamento em direto e confirmar que a captura termina quando a partilha é parada.
+- [ ] Partilhar uma janela temporariamente para acompanhamento em direto e parar a captura ao terminar a partilha.
 - [ ] Digitalizar um documento com a câmara após ativação explícita e devolver a imagem ou o texto extraído.
-- [ ] Interpretar uma imagem da câmara após ativação explícita e confirmar que a captura fica inativa depois de terminar.
+- [ ] Interpretar uma imagem da câmara após ativação explícita e desativar a captura quando a operação termina.
 
 ### Internet e investigação
 
@@ -459,26 +376,26 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 ### Casa inteligente
 
 - [ ] Ligar o Home Assistant ou os serviços dos dispositivos e apresentar os dispositivos autorizados.
-- [ ] Controlar luzes e confirmar o estado final.
-- [ ] Controlar tomadas e confirmar o estado final.
-- [ ] Controlar estores e confirmar a posição resultante.
-- [ ] Ajustar a climatização e confirmar a temperatura alvo ou o modo definido.
-- [ ] Controlar a reprodução de música através da integração da casa e confirmar o estado do dispositivo.
-- [ ] Controlar o aspirador e confirmar o estado reportado.
+- [ ] Controlar luzes e apresentar o estado final reportado.
+- [ ] Controlar tomadas e apresentar o estado final reportado.
+- [ ] Controlar estores e apresentar a posição final reportada.
+- [ ] Ajustar a climatização e apresentar a temperatura alvo ou o modo definido.
+- [ ] Controlar a reprodução de música através da integração da casa e apresentar o estado do dispositivo.
+- [ ] Controlar o aspirador e apresentar o estado reportado.
 - [ ] Consultar os sensores da divisão pedida e mostrar a leitura e a hora.
 - [ ] Consultar consumos e apresentar os valores para o dispositivo e o período pedidos.
-- [ ] Criar uma cena por divisão e verificar o estado de cada dispositivo após a ativação.
-- [ ] Agendar uma cena por hora e confirmar que é ativada no momento definido.
+- [ ] Criar e ativar cenas por divisão e apresentar o estado de cada dispositivo após ativação.
+- [ ] Agendar a ativação de uma cena por hora.
 - [ ] Mostrar quando um dispositivo não confirmou a mudança e apresentar o último estado conhecido.
 
 ### Música e entretenimento
 
 - [ ] Reproduzir a música encontrada no serviço escolhido.
-- [ ] Reproduzir um podcast e confirmar o episódio selecionado.
-- [ ] Reproduzir um vídeo e confirmar o título selecionado.
-- [ ] Gerir a fila de reprodução e verificar a ordem após adicionar, remover ou mover itens.
+- [ ] Reproduzir o episódio de um podcast selecionado.
+- [ ] Reproduzir um vídeo selecionado.
+- [ ] Gerir a fila de reprodução, permitindo adicionar, remover e mover itens.
 - [ ] Consultar e controlar o que está a tocar na divisão indicada.
-- [ ] Ajustar o volume da reprodução na divisão escolhida e verificar o nível resultante.
+- [ ] Ajustar o volume da reprodução na divisão escolhida e apresentar o nível resultante.
 - [ ] Retomar um episódio na posição guardada.
 - [ ] Encontrar uma música pela descrição e apresentar as correspondências.
 - [ ] Encontrar um filme ou uma série pela descrição e apresentar as correspondências.
@@ -487,21 +404,21 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 
 - [ ] Enviar pedidos por chat no telemóvel e receber a resposta.
 - [ ] Usar voz no telemóvel com transcrição e resposta falada.
-- [ ] Receber uma notificação no telemóvel com uma ação rápida e confirmar que a ação é aplicada à tarefa certa.
-- [ ] Sincronizar tarefas entre PC e telemóvel e verificar que uma alteração feita num aparece no outro.
-- [ ] Enviar uma fotografia do telemóvel para o PC e confirmar a pasta de destino.
-- [ ] Enviar um documento do telemóvel para o PC e confirmar que abre no destino.
+- [ ] Receber notificações com uma ação rápida no telemóvel e aplicar a ação à tarefa associada.
+- [ ] Sincronizar alterações de tarefas entre PC e telemóvel.
+- [ ] Enviar fotografias do telemóvel para uma pasta de destino no PC.
+- [ ] Enviar documentos do telemóvel para o PC.
 - [ ] Consultar no telemóvel o estado das automações a correr no PC.
-- [ ] Suspender remotamente uma tarefa iniciada noutro dispositivo e verificar que nenhuma etapa seguinte arranca.
-- [ ] Cancelar remotamente uma tarefa iniciada noutro dispositivo e confirmar o resultado nos dois dispositivos.
+- [ ] Suspender remotamente uma tarefa iniciada noutro dispositivo e bloquear a execução da etapa seguinte enquanto está suspensa.
+- [ ] Cancelar remotamente uma tarefa e mostrar o resultado nos dois dispositivos.
 
 ### Conversa
 
-- [ ] Retomar no telemóvel uma conversa começada no PC e verificar que mantém o contexto e o perfil corretos. Depende da sincronização e do histórico.
+- [ ] Retomar no telemóvel uma conversa do PC preservando contexto e perfil. Depende da sincronização e do histórico.
 
 ### Agenda e tarefas
 
-- [ ] Criar um lembrete por localização, após autorizar o acesso à localização, e testar que dispara ao chegar ao local configurado. Depende das notificações no telemóvel.
+- [ ] Criar lembretes por localização com acesso autorizado. Depende das notificações no telemóvel.
 
 ### Proatividade
 
@@ -510,37 +427,48 @@ O ditado inclui agora uma alternativa local Whisper para navegadores sem reconhe
 - [ ] Avisar de um prazo com a antecedência configurada.
 - [ ] Alertar quando um serviço monitorizado falha e indicar qual deixou de responder.
 - [ ] Notificar o utilizador quando se cumpre uma condição que pediu para vigiar, com uma ligação ou referência ao resultado.
-- [ ] Aplicar horas de silêncio e confirmar que os avisos sem permissão para interromper ficam pendentes.
-- [ ] Agrupar notificações relacionadas e verificar que os eventos continuam identificáveis no grupo.
-- [ ] Configurar que tipos de alerta podem interromper o utilizador e testar um alerta permitido e um sujeito a silêncio.
+- [ ] Aplicar horas de silêncio e manter pendentes os avisos sem permissão para interromper.
+- [ ] Agrupar notificações relacionadas mantendo cada evento identificável.
+- [ ] Configurar que tipos de alerta podem interromper o utilizador.
 
 ### Painel e acessibilidade
 
-- [ ] Configurar um controlo físico opcional para iniciar a escuta ou parar uma tarefa e verificar que a ação tem o mesmo efeito que no painel.
+- [ ] Configurar um controlo físico opcional para iniciar a escuta ou parar uma tarefa.
 
 ### Permissões e privacidade
 
-- [ ] Aplicar permissões por dispositivo e testar que um telemóvel ou dispositivo doméstico não autorizado não consegue executar ações.
+- [ ] Aplicar permissões por dispositivo.
 - [ ] Atribuir uma permissão própria a ações físicas sensíveis, como abrir uma porta.
-- [ ] Mostrar o dispositivo e o efeito pretendido antes de pedir confirmação de uma ação física sensível. Testar a recusa e verificar o estado do dispositivo.
-- [ ] Revogar a permissão de partilha da janela, câmara ou localização e confirmar que termina a recolha que dependia dela.
+- [ ] Mostrar o dispositivo e o efeito pretendido antes de confirmar uma ação física sensível.
+- [ ] Permitir revogar a partilha de janela, câmara ou localização e terminar a recolha dependente.
 
 ### Funcionamento local e desempenho
 
-- [ ] Encaminhar pedidos simples para um modelo rápido e medir o tempo de resposta a comandos de voz.
-- [ ] Encaminhar tarefas longas para um modelo mais capaz e verificar se conclui os passos esperados.
+- [ ] Encaminhar pedidos simples para um modelo rápido.
+- [ ] Encaminhar tarefas longas para um modelo mais capaz.
 - [ ] Ativar o modelo de visão quando o utilizador pede uma análise de imagem, janela ou câmara.
-- [ ] Permitir ativar ou desativar serviços externos e confirmar que os comandos locais continuam disponíveis.
+- [ ] Permitir ativar ou desativar serviços externos preservando os comandos locais.
 
-### Teste de aceitação da versão avançada
+## Protótipo H.O.L.O Hands
 
-> «Olá, Jarvis. Mostra-me o que diz o erro na janela ativa, baixa os estores do escritório e avisa-me no telemóvel quando o site do projeto mudar.»
+### Validar a base
 
-- [ ] Confirmar que a palavra de ativação inicia a escuta e que o JARVIS transcreve o pedido em português de Portugal.
-- [ ] Confirmar que lê a mensagem de erro na janela autorizada e encerra a captura após a leitura.
-- [ ] Confirmar que atua nos estores do escritório e comunica a posição reportada. Repetir o teste com o dispositivo offline e verificar que apresenta a falha.
-- [ ] Alterar uma página de teste e confirmar que o telemóvel recebe um único aviso com a alteração identificada.
-- [ ] Repetir durante as horas de silêncio e confirmar que o aviso respeita a regra definida.
-- [ ] Cancelar a vigilância no telemóvel e confirmar no PC que a tarefa ficou cancelada.
+- [ ] Inspecionar o fluxo de chat e voz do Jarvis para identificar por onde enviar contexto de um cartão e ler a resposta.
 
-As 24 áreas da proposta original estão representadas nos subtítulos das cinco fases.
+### Ligar o gesto ao modelo
+
+- [x] Fixar a revisão do H.O.L.O usada no protótipo e preservar a licença e os créditos.
+- [x] Reutilizar a ação de resumo do H.O.L.O para enviar a nota selecionada a uma rota local.
+- [x] Implementar o resumo no Ollama e a apresentação do resultado no painel.
+- [x] Mostrar o estado de processamento e tratar pedidos repetidos, Ollama indisponível e modelo em falta.
+
+### Integrar a voz
+
+- [x] Adicionar a leitura pelo navegador, com seleção de voz local e indicação de voz indisponível.
+- [x] Usar a nota aberta como contexto de uma pergunta escrita.
+- [x] Adicionar ditado local ao campo de pergunta.
+
+### Preparar a instalação
+
+- [ ] Documentar a configuração e o arranque no Windows, incluindo a instalação inicial dos modelos.
+- [ ] Registar os passos para resolver problemas de câmara, microfone ou Ollama.
